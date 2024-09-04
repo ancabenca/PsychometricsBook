@@ -524,7 +524,7 @@ plot(fit_NRM_mirt, type = "trace")
 
 #--------------
 data("CZmaturaS", package = "ShinyItemAnalysis")
-CZmathS <- CZmaturaS[, grepl("^b", names(CZmatura))]
+CZmathS <- CZmaturaS[, grepl("^b", names(CZmaturaS))]
 # rescoring items 17-24 (multiple-choice, originally scored as 0 or 2 pts)
 CZmathS[, paste0("b", 17:24)] <- as.numeric(CZmathS[, paste0("b", 17:24)] == 2)
 head(CZmathS, n = 2)
