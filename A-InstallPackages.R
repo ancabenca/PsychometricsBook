@@ -22,7 +22,7 @@ install.packages("hemp")
 install.packages("lattice")
 install.packages("lavaan")
 install.packages("lme4")
-install.packages("lmTest")
+install.packages("lmtest")#changing the T to t
 install.packages("lordif")
 install.packages("ltm")
 install.packages("mirt")

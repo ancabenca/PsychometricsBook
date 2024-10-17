@@ -63,6 +63,7 @@ Z^2
 #--------------
 
 #--------------
+?prop.test
 prop.test(x = 34, n = 37, alternative = "greater", correct = FALSE)
 ## 1-sample proportions test without continuity correction
 ## 
@@ -129,7 +130,7 @@ ggplot(data.frame(score = HCIprepost$score.post - HCIprepost$score.pre,
   theme_fig() +
   theme(legend.position = "none")
 #--------------
-
+#shows equivalence of one sample t test to paired t test 
 #--------------
 # differences between post-test and pre-test
 (dif <- HCIprepost$score.post - HCIprepost$score.pre)
@@ -756,3 +757,4 @@ psych::rangeCorrection(r = cor(admitted2$xvar, admitted2$yvar),
 #-----------------------------------------------------------------
 
 ShinyItemAnalysis::run_app()
+
