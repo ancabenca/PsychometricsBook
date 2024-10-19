@@ -5,3 +5,12 @@ https://arc.psych.wisc.edu/self-report/big-five-inventory-bfi/?fbclid=IwY2xjawF9
 
 Example of the test
 https://www.truity.com/test/big-five-personality-test?fbclid=IwY2xjawF9wwNleHRuA2FlbQIxMAABHdW0Mp6KJIj371i_Wj6aRH5Q7tj9ZC5xrXz4eylJl3cLCSSGACrB6tN2HA_aem_YT8X_JooKxT8w_7kSAV9dQ
+
+Info about the data:
+BFI- explained
+
+The questionnaire consists of 44 items, with eight items relating to extraversion, nine to conscientiousness, nine to agreeableness, eight to neuroticism, and ten to openness. Each statement is rated on a five-point scale from 1 (strongly disagree) to 5 (strongly agree).
+
+The BFI-close questionnaire is very similar to the regular BFI questionnaire, but it differs only in terms of who completes it. The BFI-close is completed by a person who knows the participant well and is close to them (a relative, friend, etc.), answering questions and evaluating the participant’s personality traits.
+
+hey, sending the file classifying Western and Eastern Slovenian participants. Also, just so you know, the scores are all already reversed, so we dont need to do that(:
