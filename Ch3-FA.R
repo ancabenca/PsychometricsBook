@@ -134,6 +134,7 @@ cos(pi / (1 + sqrt(a * d / (b * c))))
 #--------------
 
 #--------------
+?Anxiety
 data(Anxiety, package = "ShinyItemAnalysis")
 polychoric(table(Anxiety$R1, Anxiety$R2))
 ## $rho

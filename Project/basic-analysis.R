@@ -12,6 +12,7 @@ library(lmtest)
 library(psych)
 library(ggdendro)
 library(ShinyItemAnalysis)
+library(moments)
 
 #Plot setting (same as in the source material)
 theme_fig <- function(base_size = 17, base_family = "") {
@@ -55,7 +56,7 @@ str(ds)
 
 summary(ds)
 c(nrow(western_slovenia) + nrow(eastern_slovenia) == nrow(ds))
-
+dim(ds_og)
 
 #Optionally set the Code as name of the rows-----------------------------
 
@@ -105,6 +106,27 @@ str(ds)
 View(ds)
 summary(ds)
 
+# Load necessary libraries
+library(tibble)
+library(moments)  # For skewness and kurtosis calculations
+
+# Calculate descriptive statistics and skewness/kurtosis for both total scores
+descriptive_stats <- tibble(
+  Score_Type = c("BFI_agreeableness", "BFI_closeones_agreeableness"),
+  Mean = c(mean(ds$BFI_agreeableness, na.rm = TRUE), mean(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
+  SD = c(sd(ds$BFI_agreeableness, na.rm = TRUE), sd(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
+  Min = c(min(ds$BFI_agreeableness, na.rm = TRUE), min(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
+  Max = c(max(ds$BFI_agreeableness, na.rm = TRUE), max(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
+  Skewness = c(skewness(ds$BFI_agreeableness, na.rm = TRUE), skewness(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
+  Kurtosis = c(kurtosis(ds$BFI_agreeableness, na.rm = TRUE), kurtosis(ds$BFI_closeones_agreeableness, na.rm = TRUE))
+)
+
+# Print the formatted table
+print(descriptive_stats)
+
+
+descriptive_stats
+
 #-------------------------------------------------------------------------------
 #BASIC EXPLORATION PER ITEM
 exam_item <- ds$"BFI_1" # set here for easier manipulation
@@ -140,6 +162,115 @@ n_distinct(ds$Code) == nrow(ds) #nothing
 #2 row
 ds[duplicated(ds),] #nothing
 
+#------------------------------------------------------------------------------
+#Basic plotting
+library(gridExtra)
+
+# Create the first histogram for BFI_agreeableness
+plot1 <- ggplot(ds, aes(x = BFI_agreeableness)) +
+  geom_histogram(binwidth = 5, fill = "skyblue", color = "black") +
+  labs(title = "Histogram of BFI Agreeableness", x = "BFI Agreeableness Score", y = "Frequency") +
+  theme_minimal()
+
+# Create the second histogram for BFI_closeones_agreeableness
+plot2 <- ggplot(ds, aes(x = BFI_closeones_agreeableness)) +
+  geom_histogram(binwidth = 5, fill = "lightcoral", color = "black") +
+  labs(title = "Histogram of BFI Closeones Agreeableness", x = "BFI Closeones Agreeableness Score", y = "Frequency") +
+  theme_minimal()
+
+# Arrange the two plots side by side
+combined_plot<- grid.arrange(plot1, plot2, ncol = 2)
+ggsave("combined_histograms.png", plot = combined_plot, width = 12, height = 6, dpi = 300)
+
+
+#Item desctiptive
+# Load necessary libraries
+library(dplyr)
+library(tibble)
+library(moments)  # For skewness and kurtosis
+
+# List of score variables
+score_vars <- c(
+  "BFI_2", "BFI_7", "BFI_12", "BFI_17", "BFI_22", 
+  "BFI_27", "BFI_32", "BFI_37", "BFI_42",
+  "BFI_closeones_2", "BFI_closeones_7", "BFI_closeones_12", 
+  "BFI_closeones_17", "BFI_closeones_22", "BFI_closeones_27", 
+  "BFI_closeones_32", "BFI_closeones_37", "BFI_closeones_42"
+)
+
+# Calculate descriptive statistics
+descriptive_stats <- tibble(
+  Score_Type = score_vars,
+  Mean = sapply(score_vars, function(var) mean(ds[[var]], na.rm = TRUE)),
+  SD = sapply(score_vars, function(var) sd(ds[[var]], na.rm = TRUE)),
+  Min = sapply(score_vars, function(var) min(ds[[var]], na.rm = TRUE)),
+  Max = sapply(score_vars, function(var) max(ds[[var]], na.rm = TRUE)),
+  Skewness = sapply(score_vars, function(var) skewness(ds[[var]], na.rm = TRUE)),
+  Kurtosis = sapply(score_vars, function(var) kurtosis(ds[[var]], na.rm = TRUE))
+)
+
+# View the descriptive statistics
+print(descriptive_stats)
+
+descriptive_stats_year_western <- tibble(
+  Score_Type = c("YearNumber", "Western"),
+  Mean = c(mean(ds$YearNumber, na.rm = TRUE), mean(ds$Western, na.rm = TRUE)),
+  SD = c(sd(ds$YearNumber, na.rm = TRUE), sd(ds$Western, na.rm = TRUE)),
+  Min = c(min(ds$YearNumber, na.rm = TRUE), min(ds$Western, na.rm = TRUE)),
+  Max = c(max(ds$YearNumber, na.rm = TRUE), max(ds$Western, na.rm = TRUE)),
+  Skewness = c(skewness(ds$YearNumber, na.rm = TRUE), skewness(ds$Western, na.rm = TRUE)),
+  Kurtosis = c(kurtosis(ds$YearNumber, na.rm = TRUE), kurtosis(ds$Western, na.rm = TRUE))
+)
+print(descriptive_stats_year_western)
+
+#--------------------------------------------------------------------------------
+# 3. Compute Z-scores, T-scores, and percentiles for both scores
+ds_res <- ds %>%
+  mutate(
+    BFI_agreeableness_z = (BFI_agreeableness - mean(BFI_agreeableness, na.rm = TRUE)) / sd(BFI_agreeableness, na.rm = TRUE),
+    BFI_agreeableness_t = BFI_agreeableness_z * 10 + 50,
+    BFI_agreeableness_percentile = pnorm(BFI_agreeableness_z) * 100,
+    
+    BFI_closeones_agreeableness_z = (BFI_closeones_agreeableness - mean(BFI_closeones_agreeableness, na.rm = TRUE)) / sd(BFI_closeones_agreeableness, na.rm = TRUE),
+    BFI_closeones_agreeableness_t = BFI_closeones_agreeableness_z * 10 + 50,
+    BFI_closeones_agreeableness_percentile = pnorm(BFI_closeones_agreeableness_z) * 100
+  )
+
+# Compute success rates for each respondent based on a threshold (e.g., score >= 50)
+threshold <- 50
+ds_res <- ds_res %>%
+  mutate(
+    BFI_agreeableness_success = if_else(BFI_agreeableness >= threshold, "Success", "Fail"),
+    BFI_closeones_agreeableness_success = if_else(BFI_closeones_agreeableness >= threshold, "Success", "Fail")
+  )
+
+z_t_percentile_table <- ds_res %>%
+  select(
+    BFI_agreeableness_z,
+    BFI_agreeableness_t,
+    BFI_agreeableness_percentile,
+    BFI_closeones_agreeableness_z,
+    BFI_closeones_agreeableness_t,
+    BFI_closeones_agreeableness_percentile
+  )
+
+# Create a table for the relevant metrics for the first respondent
+first_respondent_table <- tibble(
+  Score_Type = c("BFI_agreeableness", "BFI_closeones_agreeableness"),
+  Z_Score = c(ds_res$BFI_agreeableness_z[1], ds_res$BFI_closeones_agreeableness_z[1]),
+  T_Score = c(ds_res$BFI_agreeableness_t[1], ds_res$BFI_closeones_agreeableness_t[1]),
+  Percentile = c(ds_res$BFI_agreeableness_percentile[1], ds_res$BFI_closeones_agreeableness_percentile[1]),
+  Success_Rate = c(ds_res$BFI_agreeableness_success[1], ds_res$BFI_closeones_agreeableness_success[1])
+)
+
+write.csv(z_t_percentile_table, "z_t_percentiles.csv", row.names = FALSE)
+
+# Display the first respondent's results
+print("Results for the first respondent:")
+print(first_respondent_table)
+
+
+View(ds)
 
 ##############################################################################
 #Chapter 2: Validity
@@ -154,7 +285,7 @@ ds[duplicated(ds),] #nothing
 
 #?? Do we have flaged which items are for what trait? Idk if we need it, but I can assume it would be nice
 # Combine datasets for side-by-side comparison
-
+summary(ds)
 
 #A. Extraversion
 combined_data <- data.frame(
@@ -193,17 +324,18 @@ t.test(ds$BFI_extraversion, ds$BFI_closeones_extraversion, paired = TRUE)
 var1 <- ds$BFI_agreeableness
 var2 <- ds$BFI_closeones_agreeableness
 
-ggplot(data.frame(
+boxplotsAGG <- ggplot(data.frame(
   score = c(var1, var2),
   group = factor(rep(c("Self", "Close"), 
                      times = c(length(var1), length(var2))),  # Use 'times' for correct repetitions
                  levels = c("Self", "Close"))),
   aes(x = group, y = score, fill = group)) +
-  geom_boxplot() + ylab("Total score") + xlab("") +
-  theme_fig() + theme(legend.position = "none")
+  geom_boxplot() + ylab("Agreeableness") + xlab("") +
+  theme_fig() + theme_minimal()
 
 
 t.test(var1,var2, paired = TRUE) #rejecting HO
+ggsave("boxplotAGG.png", plot = boxplotsAGG, width = 12, height = 6, dpi = 300)
 
 
 #------------------------------------------------------------------------------
@@ -257,6 +389,7 @@ ggplot(data.frame(
                  levels = c("Self", "Close"))),
   aes(x = group, y = score, fill = group)) +
   geom_boxplot() + ylab("Total score") + xlab("") +
+  scale_fill_manual(values = c("Self" = "lightblue", "Close" = "lightcoral")) +  # Specify colors here
   theme_fig() + theme(legend.position = "none")
 
 
@@ -290,12 +423,15 @@ combined_diffs <- data.frame(
 )
 
 # Create the boxplot for the differences
-ggplot(combined_diffs, aes(x = trait, y = difference)) +
-  geom_boxplot(fill = "lightblue") +
+diffBP <- ggplot(combined_diffs, aes(x = trait, y = difference)) +
+  geom_boxplot(fill = "lightcoral") +
   ylab("Difference (Self - Close Ones)") +
   xlab("Traits") +
   theme_fig() +
-  theme(legend.position = "none")
+  theme_minimal()
+ggsave("diffBP.png", plot = diffBP, width = 12, height = 6, dpi = 300)
+
+
 
 #We see that most of the time the close ones scored higher the individual. But in neurotism we
 #can spot opačný trend (furthmore the biggest difference)
@@ -451,6 +587,37 @@ ggplot(ds, aes(x = BFI_extraversion, y = BFI_agreeableness)) +
 var1 <- ds$BFI_extraversion
 var2 <- ds$BFI_agreeableness
 cor.test(var1, var2) #correlated
+
+
+# Assuming you have a data frame named ds
+
+# Select the relevant columns
+selected_columns <- c(
+  "BFI_2", "BFI_7", "BFI_12", "BFI_17", "BFI_22", 
+  "BFI_27", "BFI_32", "BFI_37", "BFI_42",
+  "BFI_closeones_2", "BFI_closeones_7", "BFI_closeones_12", 
+  "BFI_closeones_17", "BFI_closeones_22", "BFI_closeones_27", 
+  "BFI_closeones_32", "BFI_closeones_37", "BFI_closeones_42"
+)
+
+# Create the correlation matrix
+correlation_matrix <- cor(ds[, selected_columns], use = "complete.obs")
+
+write.csv(correlation_matrix, "correlation_matrix.csv", row.names = FALSE)
+
+# Optionally, visualize the correlation matrix
+# You can use the corrplot package for better visualization
+# install.packages("corrplot") # Uncomment if you haven't installed it
+library(corrplot)
+
+# Plot the correlation matrix
+corrplot(correlation_matrix, method = "circle")
+
+
+
+
+
+
 
 #---------------------------------------------------------------------
 #Regression
