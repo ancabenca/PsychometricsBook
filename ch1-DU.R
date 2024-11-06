@@ -100,3 +100,17 @@ summary(CZmatura)
 
 hist(CZmatura$Total)
 percentile69 <- quantile(CZmatura$Total, 0.69)
+
+
+
+
+
+#ADD to the final code
+# Load necessary libraries
+library(dplyr)
+
+# Assuming your dataset is named 'ds'
+
+# Compute Z-scores and T-scores for the total scores
+
+

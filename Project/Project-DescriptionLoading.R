@@ -2,9 +2,10 @@
 
 #################################################################################
 #Libraries
-
+rm(list = ls())
 #install.packages("readxl")-  in case you need to install the library
 #install.packages("dplyr")
+install.packages("forecast")
 library(ggplot2) #activating library
 library(readxl)
 library(dplyr)
@@ -13,21 +14,11 @@ library(psych)
 library(ggdendro)
 library(ShinyItemAnalysis)
 library(moments)
-
-#Plot setting (same as in the source material)
-theme_fig <- function(base_size = 17, base_family = "") {
-  theme_bw(base_size = base_size, base_family = base_family) +
-    theme(
-      legend.key = element_rect(fill = "white", colour = NA),
-      axis.line = element_line(colour = "black"),
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.background = element_blank(),
-      plot.title = element_blank(),
-      legend.background = element_blank()
-    )
-}
-
+library(forecast)
+library(gridExtra)
+library(tibble)
+library(moments)
+library(corrplot)
 
 
 ####################################################################################
@@ -50,10 +41,16 @@ eastern_slovenia <- eastern_slovenia %>%
 summary(western_slovenia)
 summary(eastern_slovenia)
 
+
+# Remove the row where Code is "MZ31SG"
+eastern_slovenia <- subset(eastern_slovenia, Code != "MZ31SG")
+
+
+
 # Merge the dataframes
 ds <- bind_rows(western_slovenia, eastern_slovenia)
 str(ds)
-
+summary(ds)
 summary(ds)
 c(nrow(western_slovenia) + nrow(eastern_slovenia) == nrow(ds))
 dim(ds_og)
@@ -93,7 +90,10 @@ ds_og <- ds[,c(1:46,91:95,101:105,111:112)]
 ds_close <- ds[,c(1:2,47:90,96:100,106:112)]
 str(ds_og)
 str(ds_close)
+summary(ds_og)
+summary(ds_close)
 
+View(ds_og)
 #Note all items should be on same scale with the same "sign" (as oposed to documentation)
 
 
@@ -164,7 +164,7 @@ ds[duplicated(ds),] #nothing
 
 #------------------------------------------------------------------------------
 #Basic plotting
-library(gridExtra)
+
 
 # Create the first histogram for BFI_agreeableness
 plot1 <- ggplot(ds, aes(x = BFI_agreeableness)) +
@@ -185,9 +185,7 @@ ggsave("combined_histograms.png", plot = combined_plot, width = 12, height = 6, 
 
 #Item desctiptive
 # Load necessary libraries
-library(dplyr)
-library(tibble)
-library(moments)  # For skewness and kurtosis
+ # For skewness and kurtosis
 
 # List of score variables
 score_vars <- c(
@@ -330,8 +328,12 @@ boxplotsAGG <- ggplot(data.frame(
                      times = c(length(var1), length(var2))),  # Use 'times' for correct repetitions
                  levels = c("Self", "Close"))),
   aes(x = group, y = score, fill = group)) +
-  geom_boxplot() + ylab("Agreeableness") + xlab("") +
-  theme_fig() + theme_minimal()
+  geom_boxplot() + 
+  ylab("Agreeableness") + 
+  xlab("") +
+  theme_minimal() +
+  scale_fill_manual(values = c("Self" = "lightblue", "Close" = "lightcoral"))  # Set custom colors
+
 
 
 t.test(var1,var2, paired = TRUE) #rejecting HO
@@ -427,7 +429,6 @@ diffBP <- ggplot(combined_diffs, aes(x = trait, y = difference)) +
   geom_boxplot(fill = "lightcoral") +
   ylab("Difference (Self - Close Ones)") +
   xlab("Traits") +
-  theme_fig() +
   theme_minimal()
 ggsave("diffBP.png", plot = diffBP, width = 12, height = 6, dpi = 300)
 
@@ -486,7 +487,7 @@ for (trait in traits2) {
   cat("\nResults for", trait, ":\n")
   print(t_test_results[[trait]])
 }
-
+str(ds)
 #but the second questionnare did not reject anything, I should probably not make any conclusion
 #however Easterns rates themselves as more agreeable than Westerns, but close ones do not think so ><
 
@@ -597,7 +598,9 @@ selected_columns <- c(
   "BFI_27", "BFI_32", "BFI_37", "BFI_42",
   "BFI_closeones_2", "BFI_closeones_7", "BFI_closeones_12", 
   "BFI_closeones_17", "BFI_closeones_22", "BFI_closeones_27", 
-  "BFI_closeones_32", "BFI_closeones_37", "BFI_closeones_42"
+  "BFI_closeones_32", "BFI_closeones_37", "BFI_closeones_42",
+  "BFI_agreeableness", "BFI_closeones_agreeableness"
+  
 )
 
 # Create the correlation matrix
@@ -607,17 +610,67 @@ write.csv(correlation_matrix, "correlation_matrix.csv", row.names = FALSE)
 
 # Optionally, visualize the correlation matrix
 # You can use the corrplot package for better visualization
-# install.packages("corrplot") # Uncomment if you haven't installed it
-library(corrplot)
+
 
 # Plot the correlation matrix
-corrplot(correlation_matrix, method = "circle")
+corTESTscores <- corrplot(
+  correlation_matrix,
+  method = "circle",
+  tl.col = "black",                     # Neutral label color
+  tl.cex = 0.8,                # Set coefficient text color to gray
+  col = colorRampPalette(c("red", "white", "blue"))(200), # Color gradient
+  title = "Correlation Matrix of Selected Variables",
+  mar = c(0, 0, 1, 0),                  # Minimal margin
+  cl.pos = "b",                         # Position color legend at the bottom
+  cl.cex = 0.7                          # Adjust color legend size
+)
+# Optional: Clean up the plot background to make it minimalist
+   
+ggsave("corTESTscores.png", plot = corTESTscores, width = 12, height = 6, dpi = 300)
+par(bg = "white")
+
+cor(ds$BFI_agreeableness,ds$BFI_closeones_agreeableness)
 
 
 
 
+plot_labels <- c(
+  "Z2", "Z7", "Z12", "Z17", "Z22", 
+  "Z27", "Z32", "Z37", "Z42",
+  "Zc2", "Zc7", "Zc12", 
+  "Zc17", "Zc22", "Zc27", 
+  "Zc32", "Zc37", "Zc42",
+  "Ys", "Yc"
+)
+
+# Assign new labels to correlation matrix columns and rows for plot
+colnames(correlation_matrix) <- plot_labels
+rownames(correlation_matrix) <- plot_labels
+
+install.packages("ggcorrplot")
+library(ggcorrplot)
+# Create a ggplot-based correlation plot
+corTESTscores <- ggcorrplot(
+  correlation_matrix,
+  hc.order = FALSE,                    # Hierarchically cluster to show stronger correlations together
+  type = "lower",                     # Show only lower triangle
+  lab = TRUE,                         # Display correlation coefficients in the plot
+  lab_size = 3,                       # Set the size of correlation labels
+  colors = c("red", "white", "blue"), # Set color scale
+  legend.title = "Correlation"
+) +
+  theme_minimal() +                   # Use a clean theme for better readability
+  theme(
+    plot.title = element_text(hjust = 0.5) # Center the title
+    )
+
+ggsave("corTESTscores.png", plot = corTESTscores, width = 12, height = 6, dpi = 300)
 
 
+correlation_matrix["Z2",1:9] - corsubrho["Z2",]
+
+
+correlation_matrix[1:9,1:9] - corsubrho
 
 #---------------------------------------------------------------------
 #Regression
@@ -687,20 +740,230 @@ tetrachoric(table(ds$BFI_1,ds$BFI_2)) #non functioning -> probably not the right
 polychoric(table(ds$BFI_1,ds$BFI_2))#I am dummy, this the generalization of tetra above
 #)
 (corFull <- polychoric(x = ds[,3:90])$rho) # for both questionarres
-
+corFull
 #TODO interpretation (page)
+subdataset <- ds_og[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
+                        "BFI_22", "BFI_27", "BFI_32", "BFI_37", 
+                        "BFI_42")]
+summary(ds_og)
+str(subdataset)
+
+# Convert columns to factors if they are not
+subdataset[] <- lapply(subdataset, function(x) {
+  if (is.numeric(x)) {
+    factor(x, levels = 1:5, ordered = TRUE)
+  } else {
+    x
+  }
+})
+
+corsub <- polychoric(as.data.frame(subdataset))
+corsubrho <- corsub$rho
+
+labels <- c("Z2", "Z7", "Z12", "Z17", "Z22", "Z27", "Z32", "Z37", "Z42")
+
+subdataset2 <- ds_og[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
+                        "BFI_22", "BFI_27", "BFI_32", "BFI_37", 
+                        "BFI_42")]
+
+
+# Create a named list of labels for the plot
+names(corsubrho) <- labels
+rownames(corsubrho) <- labels
+colnames(corsubrho) <- labels
+rownames(subdataset2) <- labels
+colnames(subdataset2) <- labels
+
+
+
+# Plot using ggcorrplot
+polychoricPlot <- ggcorrplot(
+  corsubrho,
+  hc.order = FALSE,                     # Hierarchically cluster to show stronger correlations together
+  type = "lower",                      # Show only lower triangle
+  lab = TRUE,                          # Display correlation coefficients in the plot
+  lab_size = 3,                        # Set the size of correlation labels
+  colors = c("red", "white", "blue"),  # Set color scale
+  legend.title = "Correlation"
+) +
+  theme_minimal() +                    # Use a clean theme for better readability
+  theme(
+    plot.title = element_text(hjust = 0.5)  # Center the title
+  )
+ddgram <-ggdendrogram(data = hc)
+
+
+
+ggsave("corTESTpoly.png", plot = polychoricPlot, width = 12, height = 6, dpi = 300)
+
+
 
 #Clustering---------------------------------------------------------------------------
-hc <- hclust(d = as.dist(1 - corFull), method = "ward.D2")
+hc <- hclust(d = as.dist(1 - corsubrho), method = "ward.D2")
 ggdendrogram(data = hc)
-plot_corr(Data = ds[,3:90], cor = "polychoric", clust_method = "ward.D2")
-#I think it is natural to have such layout
-#TODO Interpretation
+# Define custom labels
+labels <- c("Z2", "Z7", "Z12", "Z17", "Z22", "Z27", "Z32", "Z37", "Z42")
+
+
 
 #Factor Analysis--------------------------------------------------------------
+str(subdataset)
+FA1 <- fa(r = corsubrho, nfactors = 1, fm = "ml")
+FA1 <- fa(r = corsubrho, nfactors = 1, fm = "ml")
+summary(FA1) 
 
-fa(r = corFull, nfactors = 1, fm = "ml")
-FA1 <- fa(r = ds[,3:90], cor = "polychoric", nfactors = 1, fm = "ml")
+subdataset2 <- subdataset2 %>%
+  mutate(across(everything(), ~ factor(.x, levels = 1:5, ordered = TRUE)))
 
-#Okay, I undersestimated the Factor analysis, big TODO till the end of the day
 
+# Make sure data is numeric and within the correct range
+subdataset2 <- subdataset2 %>%
+  mutate(across(everything(), ~ as.numeric(as.character(.))))
+
+# Run factor analysis with polychoric correlation
+FA2 <- fa(subdataset2, nfactors = 2, cor = "polychoric")
+
+FA3 <- fa(subdataset2, nfactors = 3, cor = "polychoric",rotate = "none")
+FA4 <- fa(subdataset2, nfactors = 4, cor = "polychoric",rotate = "none")
+
+
+# Remove Z32 from subdataset2
+subdataset2_no_Z32 <- subdataset2 %>% select(-Z32)
+
+# Run factor analysis with polychoric correlation without Z32
+FA2_no_Z32 <- fa(subdataset2_no_Z32, nfactors = 2, cor = "polychoric")
+
+
+#goal: is to divide them into groups that correlates highest with each other
+#factor: hidden variable; that affects observed values
+
+# explain the individual factors + provide table -> each factor should represent something different, but not contrasting
+# good rule of thumb is to see cumulative variance and pick highest ones (or BIC)
+# h2 -> how well is the variance explained by the factors, u2 =1-h2
+#com -> how many factors (complexity)
+
+
+
+#M1: Z2, Z12, Z27, Z37
+#M2: Z17, Z22, Z42
+#M3: Z7, Z32
+
+# h2 the worst: Z17, 
+################################################################################xxx
+#PCA analysis------------------------------------------------------------------------
+
+# Convert all columns to numeric values
+subdataset2 <- subdataset2 %>%
+  mutate(across(everything(), ~ as.numeric(as.character(.))))
+
+# Compute the polychoric correlation matrix
+polycor_matrix <- polychoric(subdataset2)$rho
+
+# Run PCA on the polychoric correlation matrix
+?principal
+pca_result <- principal(polycor_matrix, nfactors = ncol(subdataset2), rotate = "none")
+pca_result <- principal(corsubrho, nfactors = ncol(subdataset2), rotate = "none")
+
+pca_result2 <- principal(corsubrho, nfactors = ncol(subdataset2)-6, rotate = "none")
+# View the PCA summary
+print(pca_result)
+plot(pca_result$values, type = "b", xlab = "Principal Component", ylab = "Eigenvalue", main = "Scree Plot")
+plot(pca_result2$values, type = "b", xlab = "Principal Component", ylab = "Eigenvalue", main = "Scree Plot")
+
+#PC1, potentialy PC2 are strong contestant (loadings matrix)
+#h2 says how well the variance is explained
+#SS loadings -> how well does each principal component explains variance
+#Proportional ->in %
+#Mean item complexity ->each item related in PC 3
+#Fit statistics RMSE = 0 -> perfect fit
+
+#Interpretability
+# PC 1 explains 42 % of the variance -> Z2, Z27, Z37 has high loading -> these items
+#might reflect the core charactertics of agreee or related traits
+# PC2 still not bad (14%)
+
+#Community values:  higher ->PCA effectivelly captures the data
+#Complexity of 3.1 -> items are influenced by multiple underlying factors (so we might not 
+#measure only one thing)
+
+#Math
+#Loadings = eigenvalues of C covariance matrix
+#Z2 = 0.72 -> Z2 contribues signif to the direction of the first principal compoennt 
+
+
+
+# I could probably use variance already computed in the data
+# Extract variance explained (proportion of variance) from pca_result
+explained_variance <- pca_result$values / sum(pca_result$values)
+
+# Create a data frame for plotting
+variance_df <- data.frame(
+  Principal_Component = seq_along(explained_variance),
+  Variance_Explained = explained_variance
+)
+variance_df$Principal_Component <- factor(variance_df$Principal_Component)
+
+# Create the bar plot with corrected x-axis labels
+screeplot <- ggplot(variance_df, aes(x = Principal_Component, y = Variance_Explained)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  labs(
+    x = "Principal Component",
+    y = "Proportion of Variance Explained"
+  ) +
+  theme_minimal() +
+  scale_x_discrete(labels = paste0("PC", 1:nrow(variance_df)))
+
+
+
+ggsave("screeplot.png", plot = screeplot, width = 12, height = 6, dpi = 300)
+
+#Variance Explained by Principal Components
+
+
+
+first_pc_loadings <- pca_result$loadings[, 1]
+
+# Plot as a bar plot
+barplot(first_pc_loadings, main = "First Principal Component Loadings", 
+        xlab = "Variables", ylab = "Loadings", col = "lightblue", 
+        names.arg = colnames(corsubrho), las = 2, cex.names = 0.8)
+
+# Alternatively, plot as a scatter plot
+plot(first_pc_loadings, type = "p", main = "First Principal Component Loadings",
+     xlab = "Variables", ylab = "Loadings", col = "blue", pch = 19, 
+     xaxt = "n")  # suppress x-axis labels for customization
+axis(1, at = 1:length(first_pc_loadings), labels = colnames(corsubrho), las = 2, cex.axis = 0.8)
+
+
+# Extract loadings for the first two principal components and convert to a data frame
+loadings_df <- data.frame(
+  PC1 = pca_result$loadings[, 1],
+  PC2 = pca_result$loadings[, 2],
+  Variable = rownames(pca_result$loadings)
+)
+
+
+screeplot <- ggplot(variance_df, aes(x = Principal_Component, y = Variance_Explained)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  labs(
+    x = "Principal Component",
+    y = "Proportion of Variance Explained"
+  ) +
+  theme_minimal() +
+  scale_x_discrete(labels = paste0("PC", 1:nrow(variance_df)))
+
+
+
+
+
+# Create the scatter plot using ggplot2
+loadings <- ggplot(loadings_df, aes(x = PC1, y = PC2, label = Variable)) +
+  geom_point(color = "lightcoral", size = 3) +                     # Points in blue
+  geom_text(hjust = 0.5, vjust = -0.5, color = "blue") +  # Labels in dark red
+  labs(x = "PC1 Loadings", y = "PC2 Loadings") +
+  theme_minimal()      
+
+
+screeplotlod<- grid.arrange(screeplot, loadings, ncol = 2)
+
+ggsave("screelodplot.png", plot = screeplotlod, width = 12, height = 6, dpi = 300)

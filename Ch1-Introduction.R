@@ -393,3 +393,6 @@ ggplot(HCI, aes(sample = total)) +
 #-----------------------------------------------------------------
 
 ShinyItemAnalysis::run_app()
+
+
+(zscore <- as.vector(scale(ds$BFI_agreeableness)))
