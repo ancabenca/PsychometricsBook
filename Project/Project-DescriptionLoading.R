@@ -93,6 +93,27 @@ str(ds_close)
 summary(ds_og)
 summary(ds_close)
 
+#--------------------------------------------------------
+write.csv(ds, file = "ds_table.csv", row.names = FALSE)
+selected_cols <- c(
+  "BFI_2", "BFI_7", "BFI_12", "BFI_17", "BFI_22", 
+  "BFI_27", "BFI_32", "BFI_37", "BFI_42")
+  
+
+selcol2 <- c("BFI_closeones_2", "BFI_closeones_7", "BFI_closeones_12", 
+"BFI_closeones_17", "BFI_closeones_22", "BFI_closeones_27", 
+"BFI_closeones_32", "BFI_closeones_37", "BFI_closeones_42")
+
+
+SIAver <- ds[, selected_cols]
+SIAver2 <- ds[, selcol2]
+SIAver3 <- ds[, "BFI_closeones_agreeableness"]
+
+
+write.csv(SIAver, file = "ds_table2.csv", row.names = FALSE)
+write.csv(SIAver2, file = "ds_table3.csv", row.names = FALSE)
+write.csv(SIAver3, file = "ds_tableCriterion.csv", row.names = FALSE)
+
 View(ds_og)
 #Note all items should be on same scale with the same "sign" (as oposed to documentation)
 

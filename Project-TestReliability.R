@@ -78,7 +78,7 @@ df2 <- subdataset7[, setdiff(1:8, samp)]   # df2 with the remaining 4 columns
 #first half
 df1 <- subdataset7[, 1:4]; df2 <- subdataset7[, 5:8]
 #----------------------------------------------------------------------
-#eve-odd
+#even-odd
 df1 <- subdataset7[, seq(1, 8, 2)]; df2 <- subdataset7[, seq(2, 8, 2)]
 #-------------------------------------------------------------------------
 
