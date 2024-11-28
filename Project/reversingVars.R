@@ -90,8 +90,15 @@ print(equivalence_closeones)
 ################################################################################
 #Puting it together
 
+# Get the column names of both datasets
+cols_rev <- colnames(ds_rev)
+cols_rev_close <- colnames(ds_rev_close)
 
-ds_combined <- cbind(ds_rev, ds_rev_close)
+# Find the common columns and exclude them from ds_rev_close
+unique_cols_rev_close <- setdiff(cols_rev_close, cols_rev)
+
+# Combine the datasets by including only the unique columns from ds_rev_close
+ds_combined <- cbind(ds_rev, ds_rev_close[, unique_cols_rev_close])
 
 # Reorder columns to match the original `ds`
 ds_final_rev <- ds_combined[, colnames(ds_load)]
@@ -101,3 +108,8 @@ str(ds_final_rev)
 
 # Optionally compare column names to verify the order
 all(colnames(ds_final_rev) == colnames(ds_load)) # Should return TRUE
+
+
+summary(ds_combined)
+
+dim(ds_combined)

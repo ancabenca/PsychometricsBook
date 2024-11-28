@@ -187,7 +187,7 @@ ds[duplicated(ds),] #nothing
 #------------------------------------------------------------------------------
 #Basic plotting
 
-
+ds
 # Create the first histogram for BFI_agreeableness
 plot1 <- ggplot(ds, aes(x = BFI_agreeableness)) +
   geom_histogram(binwidth = 5, fill = "skyblue", color = "black") +
