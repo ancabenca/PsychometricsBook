@@ -42,9 +42,9 @@ summary(ds)
 
 #A. Extraversion
 combined_data <- data.frame(
-  score = c(ds_og$BFI_extraversion, ds_close$BFI_closeones_extraversion),
+  score = c(ds_rev$BFI_extraversion, ds_rev_close$BFI_closeones_extraversion),
   group = factor(rep(c("Self", "Close"), 
-                     c(length(ds_og$BFI_extraversion), length(ds_close$BFI_closeones_extraversion))))
+                     c(length(ds_rev$BFI_extraversion), length(ds_rev_close$BFI_closeones_extraversion))))
 )
 
 ggplot(combined_data, aes(x = group, y = score, fill = group)) +
@@ -299,7 +299,6 @@ hist(ds$BFI_agreeableness) #well, this is not really normal, right?
 hist(ds$BFI_closeones_agreeableness)
 shapiro.test(ds$BFI_agreeableness) #test for normality, it is highly sensitive to outlier, so it is not defeinite proof
 
-traits2 <- c(, "BFI_closeones_agreeableness", "BFI_closeones_conscientiousness", "BFI_closeones_neuroticism", "BFI_closeones_openness")
 
 var <- ds$"BFI_extraversion"
 var2 <- ds$"BFI_closeones_extraversion"
@@ -410,14 +409,14 @@ ggsave("corTESTscores.png", plot = corTESTscores, width = 12, height = 6, dpi = 
 #Testing Validity using LM
 
 summary(ds)
-lm.model1 <- lm(BFI_agreeableness ~ BFI_extraversion + BFI_conscientiousness + BFI_neuroticism +  BFI_openness, data = ds_og)
+lm.model1 <- lm(BFI_agreeableness ~ BFI_extraversion + BFI_conscientiousness + BFI_neuroticism +  BFI_openness, data = ds_rev)
 summary(lm.model1)
 drop1(lm.model1, test ="Chisq") #F test -> more accurate than significant test from the summary ()
 
 
 plot(lm.model1) #diadnostics is okay, not the greatest, but okay
 #-----------------
-lm.model1.1 <- lm(BFI_agreeableness ~ BFI_conscientiousness + BFI_neuroticism, data = ds_og)
+lm.model1.1 <- lm(BFI_agreeableness ~ BFI_conscientiousness + BFI_neuroticism, data = ds_rev)
 summary(lm.model1.1)
 drop1(lm.model1.1, test ="Chisq") #F test -> more accurate than significant test from the summary ()
 
@@ -427,7 +426,7 @@ anova(lm.model1, lm.model1.1) #IThe null hypothesis states that the simpler mode
 #It is okay to simplify to lm.model1.1
 
 #-----------------
-lm.model1.2 <- lm(BFI_agreeableness ~BFI_neuroticism, data = ds_og)
+lm.model1.2 <- lm(BFI_agreeableness ~BFI_neuroticism, data = ds_rev)
 summary(lm.model1.2)
 drop1(lm.model1.2, test ="Chisq") #F test -> more accurate than significant test from the summary ()
 
@@ -440,14 +439,14 @@ plot(lm.model1.2) #okay assumptions
 
 ############################################################################
 #B agreable on items ->okay this is blbost, because I just found in lm.model2.1 how was this score computed
-str(ds_og)
+
 
 lm.model2 <- lm(BFI_agreeableness ~ BFI_1 + BFI_2 + BFI_3 + BFI_4 + BFI_5 + BFI_6 + BFI_7 + BFI_8 + BFI_9 + BFI_10 + BFI_11 + BFI_12 + BFI_13 + BFI_14 + BFI_15 + BFI_16 + BFI_17 + BFI_18 + BFI_19 + BFI_20 + BFI_21 + BFI_22 + BFI_23 + BFI_24 + BFI_25 + BFI_26 + BFI_27 + BFI_28 + BFI_29 + BFI_30 + BFI_31 + BFI_32 + BFI_33 + BFI_34 + BFI_35 + BFI_36 + BFI_37 + BFI_38 + BFI_39 + BFI_40 + BFI_41 + BFI_42 + BFI_43 + BFI_44
-                ,data = ds_og) #It could probably be written much more neatly, but hey this works
+                ,data = ds_rev) #It could probably be written much more neatly, but hey this works
 
 summary(lm.model2) #too much variables
 
-lm.model2.1 <- lm(BFI_agreeableness ~ BFI_2 + BFI_7 + BFI_12 +BFI_17 + BFI_22 +BFI_27 +BFI_32 +BFI_37 + BFI_42, data = ds_og)
+lm.model2.1 <- lm(BFI_agreeableness ~ BFI_2 + BFI_7 + BFI_12 +BFI_17 + BFI_22 +BFI_27 +BFI_32 +BFI_37 + BFI_42, data = ds_rev)
 summary(lm.model2.1)
 
 #########################################################################################
@@ -464,7 +463,7 @@ polychoric(table(ds$BFI_1,ds$BFI_2))#I am dummy, this the generalization of tetr
 #)
 (corFull <- polychoric(x = ds[,3:90])$rho) # for both questionarres
 
-subdataset <- ds_og[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
+subdataset <- ds_rev[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
                         "BFI_22", "BFI_27", "BFI_32", "BFI_37", 
                         "BFI_42")]
 
@@ -482,7 +481,7 @@ corsubrho <- corsub$rho
 
 labels <- c("Z2", "Z7", "Z12", "Z17", "Z22", "Z27", "Z32", "Z37", "Z42")
 
-subdataset2 <- ds_og[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
+subdataset2 <- ds_rev[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
                          "BFI_22", "BFI_27", "BFI_32", "BFI_37", 
                          "BFI_42")] #additional subdataset for testing
 

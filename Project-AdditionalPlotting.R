@@ -45,7 +45,7 @@ ggsave("combined_histograms.png", plot = combined_plot, width = 12, height = 6, 
 ################################################################################
 #Regression - checking assumptions
 
-lm.model1.2 <- lm(BFI_agreeableness ~ BFI_neuroticism, data = ds_og)
+lm.model1.2 <- lm(BFI_agreeableness ~ BFI_neuroticism, data = ds_rev)
 checkresiduals(lm.model1.2) #automatic, but it is ugly
 
 #residuals and fitted values

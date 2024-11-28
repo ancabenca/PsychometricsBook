@@ -3,6 +3,22 @@
 #################################################################################
 #Libraries
 rm(list = ls())
+
+theme_fig <- function(base_size = 17, base_family = "") {
+  theme_bw(base_size = base_size, base_family = base_family) +
+    theme(
+      legend.key = element_rect(fill = "white", colour = NA),
+      axis.line = element_line(colour = "black"),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.background = element_blank(),
+      plot.title = element_blank(),
+      legend.background = element_blank()
+    )
+}
+
+
+
 #install.packages("readxl")-  in case you need to install the library
 #install.packages("dplyr")
 install.packages("forecast")
@@ -92,27 +108,27 @@ summary(ds_og)
 summary(ds_close)
 
 #--------------------------------------------------------
-write.csv(ds, file = "ds_table.csv", row.names = FALSE)
-selected_cols <- c(
-  "BFI_2", "BFI_7", "BFI_12", "BFI_17", "BFI_22", 
-  "BFI_27", "BFI_32", "BFI_37", "BFI_42")
+#write.csv(ds, file = "ds_table.csv", row.names = FALSE)
+#selected_cols <- c(
+#  "BFI_2", "BFI_7", "BFI_12", "BFI_17", "BFI_22", 
+#  "BFI_27", "BFI_32", "BFI_37", "BFI_42")
   
 
-selcol2 <- c("BFI_closeones_2", "BFI_closeones_7", "BFI_closeones_12", 
-"BFI_closeones_17", "BFI_closeones_22", "BFI_closeones_27", 
-"BFI_closeones_32", "BFI_closeones_37", "BFI_closeones_42")
+#selcol2 <- c("BFI_closeones_2", "BFI_closeones_7", "BFI_closeones_12", 
+#"BFI_closeones_17", "BFI_closeones_22", "BFI_closeones_27", 
+#"BFI_closeones_32", "BFI_closeones_37", "BFI_closeones_42")
 
 
-SIAver <- ds_load[, selected_cols]
-SIAver2 <- ds_load[, selcol2]
-SIAver3 <- ds_load[, "BFI_closeones_agreeableness"]
+#SIAver <- ds_load[, selected_cols]
+#SIAver2 <- ds_load[, selcol2]
+#SIAver3 <- ds_load[, "BFI_closeones_agreeableness"]
 
 
-write.csv(SIAver, file = "ds_table2.csv", row.names = FALSE)
-write.csv(SIAver2, file = "ds_table3.csv", row.names = FALSE)
-write.csv(SIAver3, file = "ds_tableCriterion.csv", row.names = FALSE)
+#write.csv(SIAver, file = "ds_table2.csv", row.names = FALSE)
+#write.csv(SIAver2, file = "ds_table3.csv", row.names = FALSE)
+#write.csv(SIAver3, file = "ds_tableCriterion.csv", row.names = FALSE)
 
-View(ds_og)
+#View(ds_og)
 #Note all items should be on same scale with the same "sign" (as oposed to documentation)
 #############################################################################
 #Now run the reversingVar
@@ -187,7 +203,7 @@ ds[duplicated(ds),] #nothing
 #------------------------------------------------------------------------------
 #Basic plotting
 
-ds
+
 # Create the first histogram for BFI_agreeableness
 plot1 <- ggplot(ds, aes(x = BFI_agreeableness)) +
   geom_histogram(binwidth = 5, fill = "skyblue", color = "black") +
@@ -245,6 +261,9 @@ print(descriptive_stats_year_western)
 
 #--------------------------------------------------------------------------------
 # 3. Compute Z-scores, T-scores, and percentiles for both scores
+library(dplyr)
+
+# Perform the transformations and calculations
 ds_res <- ds %>%
   mutate(
     BFI_agreeableness_z = (BFI_agreeableness - mean(BFI_agreeableness, na.rm = TRUE)) / sd(BFI_agreeableness, na.rm = TRUE),
@@ -256,16 +275,17 @@ ds_res <- ds %>%
     BFI_closeones_agreeableness_percentile = pnorm(BFI_closeones_agreeableness_z) * 100
   )
 
-# Compute success rates for each respondent based on a threshold (e.g., score >= 50)
+# Compute success rates based on transformed scores (e.g., using the T-score)
 threshold <- 50
 ds_res <- ds_res %>%
   mutate(
-    BFI_agreeableness_success = if_else(BFI_agreeableness >= threshold, "Success", "Fail"),
-    BFI_closeones_agreeableness_success = if_else(BFI_closeones_agreeableness >= threshold, "Success", "Fail")
+    BFI_agreeableness_success = if_else(BFI_agreeableness_t >= threshold, "Success", "Fail"),
+    BFI_closeones_agreeableness_success = if_else(BFI_closeones_agreeableness_t >= threshold, "Success", "Fail")
   )
 
+# Explicitly call dplyr::select to avoid conflicts
 z_t_percentile_table <- ds_res %>%
-  select(
+  dplyr::select(
     BFI_agreeableness_z,
     BFI_agreeableness_t,
     BFI_agreeableness_percentile,
@@ -293,6 +313,8 @@ print(first_respondent_table)
 View(ds)
 
 ##############################################################################
+
+###SHOULD HAVE BEEN DELETED## - same as Project-TestValidity
 #Chapter 2: Validity
 #What can we compare: Two sets of test - one from self-eval, the second from close ones
 #It probably should be by one trait
@@ -309,9 +331,9 @@ summary(ds)
 
 #A. Extraversion
 combined_data <- data.frame(
-  score = c(ds_og$BFI_extraversion, ds_close$BFI_closeones_extraversion),
+  score = c(ds_rev$BFI_extraversion, ds_rev_close$BFI_closeones_extraversion),
   group = factor(rep(c("Self", "Close"), 
-                     c(length(ds_og$BFI_extraversion), length(ds_close$BFI_closeones_extraversion))))
+                     c(length(ds_rev$BFI_extraversion), length(ds_rev_close$BFI_closeones_extraversion))))
 )
 
 ggplot(combined_data, aes(x = group, y = score, fill = group)) +
@@ -572,7 +594,6 @@ hist(ds$BFI_agreeableness) #well, this is not really normal, right?
 hist(ds$BFI_closeones_agreeableness)
 shapiro.test(ds$BFI_agreeableness) #test for normality, it is highly sensitive to outlier, so it is not defeinite proof
 
-traits2 <- c(, "BFI_closeones_agreeableness", "BFI_closeones_conscientiousness", "BFI_closeones_neuroticism", "BFI_closeones_openness")
 
 var <- ds$"BFI_extraversion"
 var2 <- ds$"BFI_closeones_extraversion"
@@ -764,11 +785,9 @@ polychoric(table(ds$BFI_1,ds$BFI_2))#I am dummy, this the generalization of tetr
 (corFull <- polychoric(x = ds[,3:90])$rho) # for both questionarres
 corFull
 #TODO interpretation (page)
-subdataset <- ds_og[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
+subdataset <- ds_rev[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
                         "BFI_22", "BFI_27", "BFI_32", "BFI_37", 
                         "BFI_42")]
-summary(ds_og)
-str(subdataset)
 
 # Convert columns to factors if they are not
 subdataset[] <- lapply(subdataset, function(x) {
@@ -784,7 +803,7 @@ corsubrho <- corsub$rho
 
 labels <- c("Z2", "Z7", "Z12", "Z17", "Z22", "Z27", "Z32", "Z37", "Z42")
 
-subdataset2 <- ds_og[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
+subdataset2 <- ds_rev[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
                         "BFI_22", "BFI_27", "BFI_32", "BFI_37", 
                         "BFI_42")]
 
