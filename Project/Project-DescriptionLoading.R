@@ -48,12 +48,12 @@ eastern_slovenia <- subset(eastern_slovenia, Code != "MZ31SG")
 
 
 # Merge the dataframes
-ds <- bind_rows(western_slovenia, eastern_slovenia)
-str(ds)
-summary(ds)
-summary(ds)
-c(nrow(western_slovenia) + nrow(eastern_slovenia) == nrow(ds))
-dim(ds_og)
+ds_load <- bind_rows(western_slovenia, eastern_slovenia)
+str(ds_load)
+summary(ds_load)
+summary(ds_load)
+c(nrow(western_slovenia) + nrow(eastern_slovenia) == nrow(ds_load))
+
 
 #Optionally set the Code as name of the rows-----------------------------
 
@@ -68,11 +68,11 @@ dim(ds_og)
 # Renaming for easier handling (Cause mezery sucks)
 
 
-ds <- ds %>% rename(Year = `year of study`)
-unique(ds$Year)
+ds_load <- ds_load %>% rename(Year = `year of study`)
+unique(ds_load$Year)
 
 # Create a new column 'YearNumber' based on the values in 'Year'
-ds <- ds %>%
+ds_load <- ds_load %>%
   mutate(YearNumber = case_when(
     Year == "2019/20" ~ 1,
     Year == "2020/21" ~ 2,
@@ -81,13 +81,11 @@ ds <- ds %>%
     Year == "2023/24" ~ 5
   ))
 
-summary(ds)
-dim(ds)
-dim(western_slovenia)
+
 
 #Two tests: make separate sheet - maybe useful
-ds_og <- ds[,c(1:46,91:95,101:105,111:112)]
-ds_close <- ds[,c(1:2,47:90,96:100,106:112)]
+ds_og <- ds_load[,c(1:46,91:95,101:105,111:112)]
+ds_close <- ds_load[,c(1:2,47:90,96:100,106:112)]
 str(ds_og)
 str(ds_close)
 summary(ds_og)
@@ -105,9 +103,9 @@ selcol2 <- c("BFI_closeones_2", "BFI_closeones_7", "BFI_closeones_12",
 "BFI_closeones_32", "BFI_closeones_37", "BFI_closeones_42")
 
 
-SIAver <- ds[, selected_cols]
-SIAver2 <- ds[, selcol2]
-SIAver3 <- ds[, "BFI_closeones_agreeableness"]
+SIAver <- ds_load[, selected_cols]
+SIAver2 <- ds_load[, selcol2]
+SIAver3 <- ds_load[, "BFI_closeones_agreeableness"]
 
 
 write.csv(SIAver, file = "ds_table2.csv", row.names = FALSE)
@@ -148,7 +146,6 @@ descriptive_stats <- tibble(
 
 # Print the formatted table
 print(descriptive_stats)
-
 
 descriptive_stats
 
