@@ -94,10 +94,10 @@ print(equivalence_closeones)
 ds_combined <- cbind(ds_rev, ds_rev_close)
 
 # Reorder columns to match the original `ds`
-ds_final_rev <- ds_combined[, colnames(ds)]
+ds_final_rev <- ds_combined[, colnames(ds_load)]
 
 # Check the structure to confirm it matches `ds`
 str(ds_final_rev)
 
 # Optionally compare column names to verify the order
-all(colnames(ds_final_rev) == colnames(ds)) # Should return TRUE
+all(colnames(ds_final_rev) == colnames(ds_load)) # Should return TRUE
