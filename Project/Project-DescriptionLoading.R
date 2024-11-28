@@ -116,7 +116,11 @@ write.csv(SIAver3, file = "ds_tableCriterion.csv", row.names = FALSE)
 
 View(ds_og)
 #Note all items should be on same scale with the same "sign" (as oposed to documentation)
+#############################################################################
+#Now run the reversingVar
 
+#This is piggy style, but I am not by hand replacing ds with ds_combined
+ds <- ds_combined
 
 ###############################################################################
 #BASIC OVERVIEW
