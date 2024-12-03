@@ -264,3 +264,223 @@ ItemAnalysis(Data = subdataset[,1:9])$Alpha.drop
 #Item Validity
 ItemAnalysis(Data = subdataset[,1:9], criterion = ds_close$BFI_closeones_agreeableness)$Corr.criterion
 DDplot(Data = subdataset[,1:9], criterion = ds_close$BFI_closeones_agreeableness, thr = NULL)
+#######################################################################################
+#Ordinal logistic regression
+library(foreign)
+library(ggplot2)
+library(reshape2)
+library(MASS)
+library(Hmisc)
+library(mirt)
+# We model E[Y_pi | X_p, Xi_i], Y_pi item score of person p in item i, X_p observed ability of person p, Xi_i parameter of the item i
+
+# Compute the mean and standard deviation of the total scores
+mean_total <- mean(ds_rev$BFI_agreeableness, na.rm = TRUE)
+sd_total <- sd(ds_rev$BFI_agreeableness, na.rm = TRUE)
+
+# Compute z-scores
+ds_rev$BFI_agreeableness_z <- (ds_rev$BFI_agreeableness - mean_total) / sd_total
+zscore <- ds_rev$BFI_agreeableness_z
+A_items <- subdataset - 1
+
+for (label in labels) {
+  A_items[[label]] <- ordered(factor(A_items[[label]], 
+                                     levels = 0:max(A_items[[label]], na.rm = TRUE)))
+}
+str(A_items)
+
+#--------------------------------------------------------------------------------
+# Cumulative
+library(VGAM)
+
+# Create a list to store the model fits
+model_fits <- list()
+
+# Loop over each label
+for (label in labels) {
+  # Fit the cumulative model for the current item
+  model_fits[[label]] <- vglm(A_items[[label]] ~ zscore, 
+                              family = cumulative(reverse = TRUE, parallel = TRUE))
+  
+  # Optionally, print a summary of the fit
+  cat("\nSummary for:", label, "\n")
+  print(summary(model_fits[[label]]))
+}
+
+m12 <- model_fits[['Z12']]
+# IRT Parametrization
+c(-coef(m12)[1:4] / coef(m12)[5], coef(m12)[5])
+
+deltamethod(list(~ -x1 / x5, ~ -x2 / x5, ~ -x3 / x5, ~ -x4 / x5, ~x5),
+            mean = coef(m12), cov = vcov(m12))
+
+library(ShinyItemAnalysis)
+plotCumulative(m12, type = "cumulative") #Interpretation to do
+
+# more detailed - TODO
+plotCumulative(
+  m12,
+  type = "cumulative", matching.name = "Z-score"
+)  +
+  theme_fig() + 
+  xlim(-1.1, 5.2) + 
+  theme(legend.position = c(0.79, 0.23),
+        legend.box = "horizontal",
+        legend.margin = margin(0, -5, 0, 0),
+        legend.background = element_blank())  
+
+
+plotCumulative(m12, type = "category")
+#-------------------------------------------------------------------------------
+# Adjacent
+model_fits_a <- list()
+
+for (label in labels) {
+  # Fit the cumulative model for the current item
+  model_fits_a[[label]] <- vglm(A_items[[label]] ~ zscore, 
+                              family = acat(reverse = FALSE, parallel = TRUE))
+  
+  # Optionally, print a summary of the fit
+  cat("\nSummary for:", label, "\n")
+  print(summary(model_fits_a[[label]]))
+}
+
+
+m12_a <- model_fits_a[['Z12']]
+c(-coef(m12_a)[1:4] / coef(m12_a)[5], coef(m12_a)[5])
+deltamethod(list(~ -x1 / x5, ~ -x2 / x5, ~ -x3 / x5, ~ -x4 / x5, ~x5),
+            mean = coef(m12_a), cov = vcov(m12_a))
+
+
+plotAdjacent(m12_a, matching.name = "Z-score")
+
+#joint model + person item map
+#??? Can I use that?
+
+###########################################################################################¨
+#########################################################################################################
+#Chapter 7: IRT Models
+
+
+#A:mirt -> probably use this package
+#For us is relevant chapter 8
+library(mirt)
+# Convert the matrix of ordered factors (A_items) to numeric
+A_items_numeric <- as.data.frame(lapply(A_items, function(x) as.numeric(as.character(x))))
+
+# Check the structure of the resulting numeric data
+str(A_items_numeric)
+
+fit.grm.mirt <- mirt(A_items_numeric, model = 1, itemtype = 'graded', SE = TRUE) 
+fit.grm.mirt2 <- mirt(A_items_num_merge, model = 1, itemtype = 'graded', SE = TRUE, dentype = 'EH') 
+summary(fit.grm.mirt)
+summary(fit.grm.mirt2)
+
+coef(fit.grm.mirt, IRTpars = TRUE, simplify = TRUE)
+coef(fit.grm.mirt2, IRTpars = TRUE, simplify = TRUE)
+
+
+response_counts <- apply(A_items, 2, function(x) table(factor(x, levels = 0:4)))
+
+#Info about the package
+?mirt
+#uses Maximum Likelihood
+#latent trait regression
+#model = 1 -> unidimensional
+#itemtype = graded -> GRM, grsm -> GRSM (graded rated scaled model)
+#gpcm -> generalized parcial credit model 
+#method = EM (default) - okay for us, who chose 2FA
+#dentype = Gaussian (default), maybe EH would be better?
+
+#the formula is present in the description
+
+#--------------------------------------------------------------------------------
+#Plotting from book
+
+plot(fit.grm.mirt, type = 'trace') #Item probability functions
+#Y axis P(theta) - prob of selecting particular response for the item
+#X axis latent trait theta (estimate)
+#each graph = one item, one subplot = different categories
+#curve = how likely a person is to choose a specific response at different levels of latent trait
+
+# item response curves (IRC) for item 1 using function itemplot()
+itemplot(fit_GRM_mirt, item = 1, type = "trace")
+
+# item score function for item 1
+itemplot(fit_GRM_mirt, item = 1, type = "score")
+
+# item information curve (IIC) and SE for item 1
+itemplot(fit_GRM_mirt, item = 1, type = "info")
+
+# IRC combined with IIC for item 1
+itemplot(fit_GRM_mirt, item = 1, type = "infotrace")
+
+# item information curve (IIC) and SE for item 1
+itemplot(fit_GRM_mirt, item = 1, type = "infoSE")
+#--------------
+# further test plots (not displayed in the book):
+# test score curve
+plot(fit_GRM_mirt)
+# test score curve with 95% CI
+plot(fit_GRM_mirt, MI = 200)
+
+# test information curve (TIC)
+plot(fit_GRM_mirt, type = "info") # test information
+plot(fit_GRM_mirt, type = "infoSE") # test information and SE
+
+
+#Latent ability estimates
+fSE <- fscores(fit.grm.mirt, full.scores.SE = TRUE) #Find predicted scores for the latent traits using estimation methods
+fSE <- as.data.frame(fSE)
+
+# Then proceed with creating the db dataframe
+db <- data.frame(
+  F1 = fSE$F1, 
+  SE = fSE$SE_F1, 
+  numbers = 1:nrow(fSE),
+  Lower =  fSE$F1 - 1.96 * fSE$SE_F1,
+  Upper =  fSE$F1 + 1.96 * fSE$SE_F1
+)
+
+# Plot
+ggplot(db, aes(x = reorder(numbers, F1), y = F1)) +
+  geom_point(size = 3, color = "red") +
+  geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0.2, color = "red") +
+  labs(
+    title = "Sorted F1 Scores with Confidence Intervals",
+    x = "Index",
+    y = "F1 Score"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 5)  # Rotate x-axis labels
+  )
+#TODO: merge the categories 0 and 1
+
+#################################################################################
+
+#B: lmt
+#library(ltm)
+#fit.grm.lmt <- grm(A_items_numeric)
+#coef(fit.grm.lmt)
+#?grm
+#--------------------------------------------------------------------------------
+#plot(fit.grm.lmt, type = 'OCCu',items = 9) #for individual item
+#plot(fit.grm.lmt, type = 'ICC',items = 9)
+
+#ltm::factor.scores(fit.grm.lmt, resp.patterns = A_items_numeric)
+#ltm::factor.scores(fit.grm.lmt, resp.patterns = t(as.matrix(rep(1,9))))
+##################################################################################
+A_items_num_merge <- A_items_numeric
+
+# Using apply to modify all columns
+A_items_num_merge <- apply(A_items_num_merge, 2, function(x) ifelse(x == 0, 1, x))
+str(A_items_num_merge)
+# Convert back to data frame if needed
+A_items_num_merge <- as.data.frame(A_items_num_merge)
+A_items_num_merge <- A_items_num_merge - 1
+
+#GRCMx
+fit.GRSMirt.mirt <- mirt(A_items_num_merge, model = 1, itemtype = "grsmIRT")
+coef(fit.GRSMirt.mirt, simplify = TRUE)
+anova(fit.GRSMirt.mirt, fit.grm.mirt2) #I do not think we can compare those

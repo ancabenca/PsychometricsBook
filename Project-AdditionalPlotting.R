@@ -46,6 +46,7 @@ ggsave("combined_histograms.png", plot = combined_plot, width = 12, height = 6, 
 #Regression - checking assumptions
 
 lm.model1.2 <- lm(BFI_agreeableness ~ BFI_neuroticism, data = ds_rev)
+summary(lm.model1.2)
 checkresiduals(lm.model1.2) #automatic, but it is ugly
 
 #residuals and fitted values
@@ -181,3 +182,4 @@ reliability <- ggplot(data, aes(x = items_new, y = reliability)) +
 
 
 ggsave("reliability.png", plot = reliability, width = 12, height = 6, dpi = 300)
+

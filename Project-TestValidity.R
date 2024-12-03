@@ -551,7 +551,9 @@ FA4 <- fa(subdataset2, nfactors = 4, cor = "polychoric",rotate = "none")
 
 
 #removing Z32
-subdataset2_no_Z32 <- subdataset2 %>% select(-Z32)
+colnames(subdataset2)
+library(dplyr)
+subdataset2_no_Z32 <- subdataset2[, !names(subdataset2) %in% "Z32"]
 
 # Run factor analysis with polychoric correlation without Z32
 FA2_no_Z32 <- fa(subdataset2_no_Z32, nfactors = 2, cor = "polychoric")
