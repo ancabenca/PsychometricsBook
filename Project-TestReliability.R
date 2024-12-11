@@ -57,10 +57,11 @@ ceiling(m * items_original) # new test length
 ceiling(m * items_original) # new test length
 #--------------
 
+ds == ds_load #items Z2, Z6, Z8, Z9, Z12, Z18, Z21, Z23, Z24, Z27, Z31, Z34, Z35, Z37 Z41, Z43
 ####################################################################################
 #Split-half testing
 set.seed(123)
-subdataset <- ds_rev[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
+subdataset <- ds_og[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
                         "BFI_22", "BFI_27", "BFI_32", "BFI_37", 
                         "BFI_42")]
 labels <- c("Z2", "Z7", "Z12", "Z17", "Z22", "Z27", "Z32", "Z37", "Z42")
@@ -98,6 +99,8 @@ reliability
 #Cronbach alpha
 #popular for internal consistency measuring
 # questions are highly correlated  -> high internal consistency
-psych::alpha(subdataset,check.keys = TRUE)$total[1]
 psych::alpha(subdataset,check.keys = TRUE)
+psych::alpha(subdataset)
+
+psych::alpha(subdataset)$total[1]
 cor.test(ds$BFI_agreeableness,ds$BFI_closeones_agreeableness)

@@ -160,6 +160,7 @@ descriptive_stats <- tibble(
   Kurtosis = c(kurtosis(ds$BFI_agreeableness, na.rm = TRUE), kurtosis(ds$BFI_closeones_agreeableness, na.rm = TRUE))
 )
 
+
 # Print the formatted table
 print(descriptive_stats)
 
@@ -772,6 +773,8 @@ str(ds[,3:90])
 
 #we could also do format, where we sum number of answer from A, B, C -> and rows would be 
 #the items themselves
+cor(ds$BFI_agreeableness,ds$BFI_closeones_agreeableness)
+cor.test(ds$BFI_agreeableness,ds$BFI_closeones_agreeableness)
 
 cor(table(ds$BFI_1,ds$BFI_2))
 cor.test(ds$BFI_1,ds$BFI_2) #cannot reject H0
