@@ -47,6 +47,14 @@ colnames(subdataset_close) <- c("Zc2", "Zc7", "Zc12", "Zc17",
                           "Zc22", "Zc27", "Zc32", "Zc37", 
                           "Zc42")
 
+subdataset2 <- ds_rev[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
+                         "BFI_22", "BFI_27", "BFI_32", "BFI_37", 
+                         "BFI_42")]
+colnames(subdataset2) <- c("Zc2", "Zc7", "Zc12", "Zc17", 
+                                "Zc22", "Zc27", "Zc32", "Zc37", 
+                                "Zc42")
+
+
 colnames(ds_close)
 ##############################################################################
 # Calculate means and standard deviations
@@ -227,13 +235,17 @@ print(neutral_counts_close_df)
 
 
 
+
+
+
 #################################################################################
 #Item discrimination
 library(ShinyItemAnalysis)
 #A. RIT -TODO: Incorrect?
 #subdataset$'BFI_total' <- ds$BFI_agreeableness
 subdataset$partTotal <-rowSums(subdataset[, c("Z2", "Z7", "Z12", "Z17", "Z22", "Z27", "Z32", "Z37", "Z42")])
-
+#lol not needed
+sum(subdataset$partTotal) == sum(ds_rev$BFI_agreeableness) #equivalencec
 
 sapply(subdataset[,1:9], function(i) cor(i, subdataset$partTotal))
 
@@ -279,11 +291,20 @@ subdataset_dichotomized <- subdataset[, 1:9] %>%
 subdataset_dichotomized$total_score <- rowSums(subdataset_dichotomized)
 
 # Select Z7 and Z17
-selected_items <- subdataset_dichotomized %>%
-  select(total_score, Z7, Z17)
+selected_items <- subdataset_dichotomized# %>%
+  #select(total_score, Z7, Z17)
+  
 
 # Compute proportions for each item
 proportions_data <- selected_items %>%
+  pivot_longer(cols = c(Z2, Z7, Z12, Z17, Z22, Z27, Z32, Z37, Z42), names_to = "item", values_to = "response") %>%
+  group_by(total_score, item) %>%
+  summarize(
+    proportion_correct = mean(response, na.rm = TRUE), # Proportion of "1"s
+    .groups = "drop"
+  )
+
+proportions_data2 <- selected_items %>%
   pivot_longer(cols = c(Z7, Z17), names_to = "item", values_to = "response") %>%
   group_by(total_score, item) %>%
   summarize(
@@ -291,8 +312,20 @@ proportions_data <- selected_items %>%
     .groups = "drop"
   )
 
+
 # Plot ICC
-iccs <- ggplot(proportions_data, aes(x = total_score, y = proportion_correct, color = item)) +
+iccs2 <- ggplot(proportions_data, aes(x = total_score, y = proportion_correct, color = item)) +
+  geom_point() +
+  geom_line() +
+  labs(
+    x = "Total Score of Dichotomized Agreeableness Related Items",
+    y = "Proportion of Correct Answers"
+  ) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+
+iccs <- ggplot(proportions_data2, aes(x = total_score, y = proportion_correct, color = item)) +
   geom_point() +
   geom_line() +
   labs(
@@ -303,7 +336,7 @@ iccs <- ggplot(proportions_data, aes(x = total_score, y = proportion_correct, co
   theme(legend.title = element_blank())
 
 ggsave("iccs.png", plot = iccs, width = 12, height = 6, dpi = 300)
-
+dim(subdataset)
 
 #######################################################################################
 #Realibity
@@ -355,7 +388,7 @@ model_fits <- list()
 for (label in labels) {
   # Fit the cumulative model for the current item
   model_fits[[label]] <- vglm(A_items[[label]] ~ zscore, 
-                              family = cumulative(reverse = TRUE, parallel = TRUE))
+                              family = cumulative(reverse = TRUE, parallel = TRUE)) #  parallel = TRUE implies the proportional odds assumption, meaning the effect of predictors (coefficients for zscore) is constant across all thresholds.
   
   # Optionally, print a summary of the fit
   cat("\nSummary for:", label, "\n")
@@ -363,29 +396,49 @@ for (label in labels) {
 }
 ?vglm
 m12 <- model_fits[['Z12']]
-# IRT Parametrization
-c(-coef(m12)[1:4] / coef(m12)[5], coef(m12)[5])
 
+m7 <- model_fits[['Z7']]
+m17 <- model_fits[['Z17']]
+summary(m7)
+summary(m17)
+# IRT Parametrization
+model <- m7
+drop1(m17, test = "Chisq")
+library(lmtest)
+lrtest_vglm(m7)
+lrtest_vglm(m17)
+
+exp(coef(model))
+
+
+c(-coef(model)[1:4] / coef(model)[5], coef(model)[5])
+library(msm)
 deltamethod(list(~ -x1 / x5, ~ -x2 / x5, ~ -x3 / x5, ~ -x4 / x5, ~x5),
-            mean = coef(m12), cov = vcov(m12))
+            mean = coef(model), cov = vcov(model))
+
+
 
 library(ShinyItemAnalysis)
-plotCumulative(m12, type = "cumulative") #Interpretation to do
+library(gridExtra)
+cumu17 <- plotCumulative(m17, type = "cumulative",matching.name = "Standardized Total Score, item Z17") #Interpretation to do
+cumu7 <- plotCumulative(m7, type = "cumulative",matching.name = "Standardized Total Score, item Z7")
 
-# more detailed - TODO
-plotCumulative(
-  m12,
-  type = "cumulative", matching.name = "Z-score"
-)  +
-  theme_fig() + 
-  xlim(-1.1, 5.2) + 
-  theme(legend.position = c(0.79, 0.23),
-        legend.box = "horizontal",
-        legend.margin = margin(0, -5, 0, 0),
-        legend.background = element_blank())  
+cumuPlot<- grid.arrange(cumu7, cumu17, ncol = 2)
+ggsave("cumuPlot.png", plot = cumuPlot, width = 12, height = 6, dpi = 300)
+?plotCumulative
 
 
-plotCumulative(m12, type = "category")
+cumucat17 <- plotCumulative(m17, type = "category", matching.name = "Standardized Total Score, item Z17")
+cumucat7 <- plotCumulative(m7, type = "category", matching.name = "Standardized Total Score, item Z7")
+cumucatPlot<- grid.arrange(cumucat7, cumucat17, ncol = 2)
+ggsave("cumucatPlot.png", plot = cumucatPlot, width = 12, height = 6, dpi = 300)
+
+
+
+count_answers <- table(subdataset2$Zc7)
+count_answers2 <- table(subdataset2$Zc17)
+
+prop.table(count_answers)
 #-------------------------------------------------------------------------------
 # Adjacent
 model_fits_a <- list()
@@ -425,12 +478,19 @@ A_items_numeric <- as.data.frame(lapply(A_items, function(x) as.numeric(as.chara
 
 # Check the structure of the resulting numeric data
 str(A_items_numeric)
-
+?mirt
 fit.grm.mirt <- mirt(A_items_numeric, model = 1, itemtype = 'graded', SE = TRUE) 
-fit.grm.mirt2 <- mirt(A_items_num_merge, model = 1, itemtype = 'graded', SE = TRUE, dentype = 'EH') 
-summary(fit.grm.mirt)
-summary(fit.grm.mirt2)
+fit.grm.mirt_2F <- mirt(A_items_numeric, model = 2, itemtype = 'graded', SE = TRUE) 
 
+fit.grm.mirt2 <- mirt(A_items_num_merge, model = 1, itemtype = 'graded', SE = TRUE, dentype = 'EH') 
+
+
+summary(fit.grm.mirt)
+summary(fit.grm.mirt_2F)
+anova(fit.grm.mirt,fit.grm.mirt_2F)
+
+summary(fit.grm.mirt2)
+coef(fit.grm.mirt, simplify = TRUE)
 coef(fit.grm.mirt, IRTpars = TRUE, simplify = TRUE)
 coef(fit.grm.mirt2, IRTpars = TRUE, simplify = TRUE)
 
@@ -459,35 +519,53 @@ plot(fit.grm.mirt, type = 'trace') #Item probability functions
 #curve = how likely a person is to choose a specific response at different levels of latent trait
 
 # item response curves (IRC) for item 1 using function itemplot()
-itemplot(fit.grm.mirt, item = 'Z37', type = "trace") #individual item
+par(mfrow = c(2,2))
 
+itemplot(fit.grm.mirt, item = 'Z17', type = "trace") #individual item
 # item score function for item 1
-itemplot(fit.grm.mirt, item = 'Z37', type = "score")
 #So what score in E() does correspond to latent trait
 #In this case: Folks with negative latent trait (?not agreeable) are likely to answer 0
 #Full range, good info
 
 # item information curve (IIC) and SE for item 1
-itemplot(fit.grm.mirt, item = 'Z37', type = "info")
+itemplot(fit.grm.mirt, item = 'Z17', type = "info")
 # tem information indicates how well an item discriminates between different levels of the latent trait.
 #High information means that the item provides precise measurement for people at a particular level of the latent trait. This is ideal for accurately estimating the trait at that level.
 #Full range, good info; peak around -2,2 ->we get reliable info in this interval
 #symmetric around
 
 # IRC combined with IIC for item 1
-itemplot(fit.grm.mirt,  item = 'Z37', type = "infotrace")
-
+#itemplot(fit.grm.mirt,  item = 'Z17', type = "infotrace")
+itemplot(fit.grm.mirt, item = 'Z17', type = "score")
 # item information curve (IIC) and SE for item 1
-itemplot(fit.grm.mirt, item = 'Z37', type = "infoSE")
+itemplot(fit.grm.mirt, item = 'Z17', type = "infoSE")
+?itemplot
+plot1 <- itemplot(fit.grm.mirt, item = 'Z17', type = "trace")
+plot2 <- itemplot(fit.grm.mirt, item = 'Z17', type = "score")
+plot3 <- itemplot(fit.grm.mirt, item = 'Z17', type = "infotrace")  # Uncomment this line if you want this plot
+plot4 <- itemplot(fit.grm.mirt, item = 'Z17', type = "infoSE")
+library(gridExtra)
+# Create a 2x2 grid of plots
+griditems <- grid.arrange(plot2, plot4, ncol = 2)
+
+# Save the 2x2 grid as a PNG image
+ggsave("griditems.png",griditems,  width = 12, height = 6)
 #The standard error is inversely related to the information: smaller SE values correspond to higher precision
 
 #--------------
 # further test plots (not displayed in the book):
 # expected test score curve
 plot(fit.grm.mirt)
-
+ 
 # test score curve with 95% CI
-plot(fit.grm.mirt, MI = 200)
+plot5 <- plot(fit.grm.mirt, MI = 200)
+plot6 <- plot(fit.grm.mirt, type = "infoSE")
+
+# Create a 1x2 grid of plots
+gridTotal <- grid.arrange(plot5, plot6, ncol = 2)
+
+# Save the 1x2 grid as a PNG image
+ggsave("gridTotal.png",gridTotal, width = 12, height = 6)
 
 # test information curve (TIC)
 plot(fit.grm.mirt, type = "info") # test information
@@ -506,9 +584,9 @@ db <- data.frame(
   Lower =  fSE$F1 - 1.96 * fSE$SE_F1,
   Upper =  fSE$F1 + 1.96 * fSE$SE_F1
 )
-
+library(ggplot2)
 # Plot
-ggplot(db, aes(x = reorder(numbers, F1), y = F1)) +
+f1scores <-  ggplot(db, aes(x = reorder(numbers, F1), y = F1)) +
   geom_point(size = 3, color = "red") +
   geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0.2, color = "red") +
   labs(
@@ -521,7 +599,7 @@ ggplot(db, aes(x = reorder(numbers, F1), y = F1)) +
     axis.text.x = element_text(angle = 90, hjust = 1, size = 5)  # Rotate x-axis labels
   )
 #TODO: merge the categories 0 and 1
-
+ggsave("f1scores.png", plot = f1scores, width = 12, height = 6, dpi = 300)
 #################################################################################
 
 #B: lmt
@@ -550,13 +628,305 @@ fit.GRSMirt.mirt <- mirt(A_items_num_merge, model = 1, itemtype = "grsmIRT")
 coef(fit.GRSMirt.mirt, simplify = TRUE)
 anova(fit.GRSMirt.mirt, fit.grm.mirt2) #I do not think we can compare those
 
-itemplot(fit.GRSMirt.mirt, item = 'Z37', type = "trace") #individual item
-itemplot(fit.GRSMirt.mirt, item = 'Z37', type = "score")
-itemplot(fit.GRSMirt.mirt, item = 'Z37', type = "info")
-itemplot(fit.GRSMirt.mirt,  item = 'Z37', type = "infotrace")
-itemplot(fit.GRSMirt.mirt, item = 'Z37', type = "infoSE")
+
+
+itemplot(fit.GRSMirt.mirt, item = 'Z17', type = "trace") #individual item
+itemplot(fit.GRSMirt.mirt, item = 'Z17', type = "score")
+itemplot(fit.GRSMirt.mirt, item = 'Z17', type = "info")
+itemplot(fit.GRSMirt.mirt,  item = 'Z17', type = "infotrace")
+itemplot(fit.GRSMirt.mirt, item = 'Z17', type = "infoSE")
 
 
 plot(fit.GRSMirt.mirt, type = 'trace')
 plot(fit.GRSMirt.mirt, MI = 200)
 plot(fit.GRSMirt.mirt, type = "infoSE") # test information and SE
+
+################################################################################
+#Dichom rasch
+fit_rasch_mirt <- mirt(data = subdataset_dichotomized[,-10], model = 1, itemtype = "Rasch", 
+                       SE = TRUE)
+coef(fit_rasch_mirt, simplify = TRUE)
+coef(fit_rasch_mirt, printSE = TRUE)
+coef(fit_rasch_mirt, IRTpars = TRUE, simplify = TRUE)
+summary(fit_rasch_mirt)
+
+# TSC (test score curve)
+plot(fit_rasch_mirt)
+#--------------
+
+#--------------
+# ICC
+plot(fit_rasch_mirt, type = "trace", facet_items = FALSE)
+#--------------
+
+#--------------
+# further plots (not displayed in the book)
+plot(fit_rasch_mirt, type = "trace", facet_items = TRUE) # ICC separately
+plot(fit_rasch_mirt, type = "infotrace", facet_items = FALSE) # Item information curves (IIC)
+plot(fit_rasch_mirt, type = "infotrace", facet_items = TRUE) # IICs separately
+plot(fit_rasch_mirt, type = "info", facet_items = FALSE) # Test information curve (TIC)
+plot(fit_rasch_mirt, type = "infoSE", facet_items = FALSE) # TIC and SE
+#--------------
+
+#--------------
+# latent abilities (factor scores) with SE
+fs_rasch_mirt_SE <- fscores(fit_rasch_mirt, full.scores.SE = TRUE)
+head(fs_rasch_mirt_SE, n = 3)
+
+fit_2PL_mirt <- mirt(data = subdataset_dichotomized[,-10], model = 1, itemtype = "2PL")
+
+##################################################################################
+ability_estimates <- fscores(fit.grm.mirt)
+# Item difficulty parameters from the model
+item_difficulties <- coef(fit.grm.mirt, IRTpars = TRUE)$items[, 1]  # Extract item difficulties
+
+# Create a data frame for plotting the Wright map
+wright_map_data <- data.frame(
+  Ability = ability_estimates[, 1],   # Latent trait (ability)
+  ItemDifficulty = item_difficulties  # Item difficulty
+)
+
+# Plot the Wright map
+ggplot(wright_map_data, aes(x = Ability, y = ItemDifficulty)) +
+  geom_point(aes(color = Ability), size = 3) +  # Use color to show ability
+  scale_color_gradient(low = "blue", high = "red") +  # Gradient for abilities
+  theme_minimal() +
+  labs(x = "Ability (Theta)", y = "Item Difficulty", title = "Wright Map")
+
+
+
+
+
+#TODO MUltiple Analysis Model 
+#Choose two traits and agggreableness and something else and do it
+
+
+
+
+table(subdataset_dichotomizedDIF$Z7)
+#################################################################################¨
+##################################################################################
+
+#DIF
+subdataset_dichotomizedDIF <- subdataset_dichotomized
+subdataset_dichotomizedDIF$Western <- ds_rev$Western
+library(dplyr)
+subdataset_dichotomizedDIF <- subdataset_dichotomizedDIF[, !(names(subdataset_dichotomizedDIF) == "total_score")]
+
+
+counts_ones <- subdataset_dichotomizedDIF %>%
+  group_by(Western) %>%
+  summarise(across(everything(), ~ sum(. == 1, na.rm = TRUE), .names = "count_{col}"))
+
+
+str(subdataset_dichotomizedDIF)
+#Western = focal group
+
+library(deltaPlotR)
+
+#Does not work---------------------------------------------------------------------------
+# delta plot using fixed threshold
+?deltaPlot
+(DP_fixed <- deltaPlot(data = subdataset_dichotomizedDIF, group = 'Western', focal.name = 1, thr = 1.5))
+(DP_norm <- deltaPlot(data = subdataset_dichotomizedDIF, group = 'Western', focal.name = 1, 
+                      thr = "norm"))
+
+deltaPlot(data = subdataset_dichotomizedDIF, group = "Western", focal.name = 1, 
+          thr = "norm", purify = TRUE)
+
+#Computation by hand from the book
+#         Z2          Z7         Z12         Z17         Z22         Z27         Z32         Z37 
+#-0.41904951  0.67332160  0.02698986  0.28395407 -0.07772496 -0.26801754 -0.32149268 -0.09644839 
+#Z42 
+#0.19846756 
+
+#----------------------------------------------------------------------------------------
+
+
+
+total_score_value <- 1
+
+# Subset the data for total_score == 6
+subset_data <- subdataset_dichotomizedDIF[subdataset_dichotomizedDIF$total_score == total_score_value, ]
+subdataset
+# Define the items you're interested in
+items <- c('Z7')
+
+# Initialize a list to store contingency tables
+contingency_tables <- list()
+
+# Loop through each item and calculate the contingency table
+for (item in items) {
+  contingency_table <- matrix(0, nrow = 2, ncol = 2,
+                              dimnames = list(c("Reference group (0)", "Focal group (1)"),
+                                              c("Yi = 1", "Yi = 0")))
+  
+  # Calculate the counts for the reference group (group == 0)
+  ref_group <- subset_data[subset_data$Western == 0, ]
+  contingency_table["Reference group (0)", "Yi = 1"] <- sum(ref_group[[item]] == 1)
+  contingency_table["Reference group (0)", "Yi = 0"] <- sum(ref_group[[item]] == 0)
+  
+  # Calculate the counts for the focal group (group == 1)
+  focal_group <- subset_data[subset_data$Western == 1, ]
+  contingency_table["Focal group (1)", "Yi = 1"] <- sum(focal_group[[item]] == 1)
+  contingency_table["Focal group (1)", "Yi = 0"] <- sum(focal_group[[item]] == 0)
+  
+  # Store the contingency table in the list
+  contingency_tables[[item]] <- contingency_table
+}
+
+summary(subdataset_dichotomizedDIF)
+
+# Print contingency tables for all items
+contingency_tables
+library(difR)#--------------
+?difMH
+difModel <- difMH(Data = subdataset_dichotomizedDIF, group = "Western", focal.name = 1,match = "score",
+                  p.adjust.method = "none", purify = FALSE)
+
+table(subdataset_dichotomizedDIF$Western)
+
+create_contingency_tables <- function(data, items, group_column, score_column) {
+  # Initialize a list to store contingency tables for each item and total score
+  contingency_tables <- list()
+  
+  # Loop through each item
+  for (item in items) {
+    item_tables <- list()
+    
+    # Get unique total scores
+    total_scores <- unique(data[[score_column]])
+    
+    # Loop through each total score
+    for (score in total_scores) {
+      # Subset data for the current total score
+      subset_data <- data[data[[score_column]] == score, ]
+      
+      # Initialize contingency table for the current score and item
+      contingency_table <- matrix(0, nrow = 2, ncol = 2,
+                                  dimnames = list(c("Reference group (0)", "Focal group (1)"),
+                                                  c("Yi = 1", "Yi = 0")))
+      
+      # Calculate counts for the reference group (group == 0)
+      ref_group <- subset_data[subset_data[[group_column]] == 0, ]
+      contingency_table["Reference group (0)", "Yi = 1"] <- sum(ref_group[[item]] == 1, na.rm = TRUE)
+      contingency_table["Reference group (0)", "Yi = 0"] <- sum(ref_group[[item]] == 0, na.rm = TRUE)
+      
+      # Calculate counts for the focal group (group == 1)
+      focal_group <- subset_data[subset_data[[group_column]] == 1, ]
+      contingency_table["Focal group (1)", "Yi = 1"] <- sum(focal_group[[item]] == 1, na.rm = TRUE)
+      contingency_table["Focal group (1)", "Yi = 0"] <- sum(focal_group[[item]] == 0, na.rm = TRUE)
+      
+      # Store the contingency table for the current score
+      item_tables[[as.character(score)]] <- contingency_table
+    }
+    
+    # Store all contingency tables for the current item
+    contingency_tables[[item]] <- item_tables
+  }
+  
+  return(contingency_tables)
+}
+
+# Example usage:
+contingency_tables <- create_contingency_tables(
+  data = subdataset_dichotomizedDIF,
+  items = c("Z32"),
+  group_column = "Western",
+  score_column = "total_score"
+)
+
+plotMHDIF <- plot.MH(difModel, names = names_list)
+ggsave("plotMHDIF.png", plot = plotMHDIF, width = 12, height = 6, dpi = 300)
+
+##########SIBTEST#########TRUE##########SIBTEST########################################################
+  difSIBTEST(Data = subdataset_dichotomizedDIF, group = "Western", focal.name = 1)
+#No diff
+
+difSIBTEST(Data = subdataset_dichotomizedDIF, group = "Western", focal.name = 1, type = "nudif")
+
+
+lapply(1:9, function(i)
+  SIBTEST(dat = subdataset_dichotomizedDIF[, 1:9], group = subdataset_dichotomizedDIF$Western, suspect_set = i))
+
+
+###########################################################################
+#Regression Models
+library(difNLR)
+fit_ORD1 <- difORD(Data = A_items_numeric, group = subdataset_dichotomizedDIF$Western, focal.name = 1, model = "cumulative")
+summary(fit_ORD1)
+coef(fit_ORD1, SE = TRUE, CI =0)$Z17
+coef(fit_ORD1, SE = TRUE, CI =0)$Z32
+
+  
+
+par(mfrow = c(2,2))
+plot(fit_ORD1, item = "Z17", plot.type = "cumulative",
+     group.names = c("Eastern", "Western"))
+plot(fit_ORD1, item = "Z32", plot.type = "cumulative",
+     group.names = c("Eastern", "Western"))
+
+plot(fit_ORD1, item = "Z17", plot.type = "category",
+     group.names = c("Eastern", "Western"))
+plot(fit_ORD1, item = "Z32", plot.type = "category",
+     group.names = c("Eastern", "Western"))
+
+
+combined_plot_DIF<- grid.arrange(pl1, pl2, ncol = 2)
+ggsave("combined_plot_DIF.png", plot = combined_plot_DIF, width = 12, height = 6, dpi = 300)
+
+
+predict(fit_ORD1, item = "Z17", match = 0, group = c(0, 1))
+
+predict(fit_ORD1, item = "Z17", match = 0, group = c(0, 1), type = "cumulative")
+
+
+#IRT
+library(lordif)
+lordiffModel <- lordif(resp.data = A_items_numeric, group = subdataset_dichotomizedDIF$Western, alpha = 0.05)
+summary(lordiffModel)
+
+lordiffModel$ipar.sparse
+
+
+ShinyItemAnalysis::run_app()
+
+
+subdataset_export <- ds_rev[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
+                                             "BFI_22", "BFI_27", "BFI_32", "BFI_37", 
+                                             "BFI_42")]
+
+
+colnames(subdataset_export) <- c("Z2", "Z7", "Z12", "Z17", 
+                          "Z22", "Z27", "Z32", "Z37", 
+                          "Z42")
+
+
+names_list <- c("Z2", "Z7", "Z12", "Z17", 
+           "Z22", "Z27", "Z32", "Z37", 
+           "Z42")
+
+write.table(subdataset_export, 
+            file = "data_export.csv", 
+            sep = ",",          # Custom separator
+            row.names = FALSE,  # Exclude row names
+            col.names = TRUE,   # Include column names
+            quote = TRUE)       # Quote character or factor data
+
+
+subdataset_export_Western <- ds_rev[, c("Western")]
+dim(subdataset_export)
+
+
+
+write.table(subdataset_export_Western, 
+            file = "data_export_western.csv", 
+            sep = ",",          # Custom separator
+            row.names = FALSE,  # Exclude row names
+            col.names = TRUE,   # Include column names
+            quote = TRUE)       # Quote character or factor data
+
+
+
+
+

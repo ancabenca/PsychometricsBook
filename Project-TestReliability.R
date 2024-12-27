@@ -61,7 +61,7 @@ ds == ds_load #items Z2, Z6, Z8, Z9, Z12, Z18, Z21, Z23, Z24, Z27, Z31, Z34, Z35
 ####################################################################################
 #Split-half testing
 set.seed(123)
-subdataset <- ds_og[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
+subdataset <- ds_rev[, c("BFI_2", "BFI_7", "BFI_12", "BFI_17", 
                         "BFI_22", "BFI_27", "BFI_32", "BFI_37", 
                         "BFI_42")]
 labels <- c("Z2", "Z7", "Z12", "Z17", "Z22", "Z27", "Z32", "Z37", "Z42")
@@ -93,8 +93,7 @@ cor_x
 reliability <- 2 * cor_x / (1 + cor_x)
 reliability
 
-#not the best results -> low number of items?
-#best reliability has even odd split
+#??? Does not hold in the report
 ###############################################################################
 #Cronbach alpha
 #popular for internal consistency measuring
@@ -104,3 +103,7 @@ psych::alpha(subdataset)
 
 psych::alpha(subdataset)$total[1]
 cor.test(ds$BFI_agreeableness,ds$BFI_closeones_agreeableness)
+
+#??? Check the number
+
+##############################################################################

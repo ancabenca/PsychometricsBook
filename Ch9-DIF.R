@@ -50,10 +50,13 @@ head(MSATB, n = 2)
 
 #--------------
 # calculating proportions of correct answer per group
-(pi0 <- colMeans(MSATB[MSATB$gender == 0, -21]))
+#(pi0 <- colMeans(MSATB[MSATB$gender == 0, -21]))
+(pi0 <- colMeans(subdataset_dichotomizedDIF[subdataset_dichotomizedDIF$Western == 0, -10]))
 ## Item49 Item27 Item41 ...
 ## 0.8161 0.2335 0.3843 ...
-(pi1 <- colMeans(MSATB[MSATB$gender == 1, -21]))
+
+#(pi1 <- colMeans(MSATB[MSATB$gender == 1, -21]))
+(pi1 <- colMeans(subdataset_dichotomizedDIF[subdataset_dichotomizedDIF$Western == 1, -10]))
 ## Item49 Item27 Item41 ...
 ## 0.8776 0.2470 0.3803 ...
 #--------------
@@ -228,8 +231,8 @@ qchisq(p = 0.95, df = 1)
 MSATB$Item49 <- as.numeric(paste(MSATB$Item49))
 #--------------
 
-#--------------
-library(difR)
+library(difR)#--------------
+
 difMH(Data = MSATB, group = "gender", focal.name = 1)
 ## ...
 ##        Stat.   P-value
@@ -1088,3 +1091,31 @@ fit_Rasch_education <- multipleGroup(data = Anxiety_bin_items, model = 1,
 #-----------------------------------------------------------------
 
 startShinyItemAnalysis()
+
+difModel
+# Example data (replace with your MH test results)
+item_numbers <- c("Z2", "Z7", "Z12", "Z17", 
+                  "Z22", "Z27", "Z32", "Z37", 
+                  "Z42")
+mh_statistics <- c(0.5, 1.2, 0.8, 3.4, 0.6, 4.5, 7.2, 0.9, 0.3)
+critical_value <- 4 # Threshold for DIF detection
+dif_items <- ifelse(mh_statistics > critical_value, "DIF", "Non-DIF")
+
+# Create a data frame
+mh_data <- data.frame(Item = item_numbers, 
+                      MH_Chi_Square = mh_statistics, 
+                      DIF_Status = dif_items)
+
+# Generate the plot
+library(ggplot2)
+
+ggplot(mh_data, aes(x = Item, y = MH_Chi_Square, label = Item)) +
+  geom_point(aes(color = DIF_Status), size = 3) + 
+  geom_hline(yintercept = critical_value, linetype = "dashed") +
+  geom_text(aes(color = DIF_Status), vjust = -1) +
+  scale_color_manual(values = c("Non-DIF" = "black", "DIF" = "red")) +
+  labs(title = "Mantel-Haenszel", 
+       x = "Item", 
+       y = "MH Chi-square statistic") +
+  theme_minimal() +
+  theme(legend.position = "none")
