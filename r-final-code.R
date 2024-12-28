@@ -66,8 +66,6 @@ eastern_slovenia <- subset(eastern_slovenia, Code != "MZ31SG") #delete NA
 ds_load <- bind_rows(western_slovenia, eastern_slovenia)
 
 ds_load <- ds_load %>% rename(Year = `year of study`)
-unique(ds_load$Year)
-
 ds_load <- ds_load %>%
   mutate(YearNumber = case_when(
     Year == "2019/20" ~ 1,
@@ -171,7 +169,6 @@ all(colnames(ds_final_rev) == colnames(ds_load)) # Should return TRUE
 ################################################################################
 #BASIC OVERVIEW
 ds <- ds_combined
-
 head(ds)
 tail(ds)
 str(ds)
@@ -214,29 +211,39 @@ descriptive_stats_items <- tibble(
 descriptive_stats_western <- ds %>%
   group_by(Western) %>%
   dplyr::summarize(
-    Score_Type = c("Yc", "Ys"),
-    Mean = c(mean(ds$BFI_agreeableness, na.rm = TRUE), mean(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
-    SD = c(sd(ds$BFI_agreeableness, na.rm = TRUE), sd(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
-    Min = c(min(ds$BFI_agreeableness, na.rm = TRUE), min(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
-    Max = c(max(ds$BFI_agreeableness, na.rm = TRUE), max(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
-    Skewness = c(skewness(ds$BFI_agreeableness, na.rm = TRUE), skewness(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
-    Kurtosis = c(kurtosis(ds$BFI_agreeableness, na.rm = TRUE), kurtosis(ds$BFI_closeones_agreeableness, na.rm = TRUE))
-  ) %>%
-  ungroup()
+    Score_Type = c("Ys", "Yc"),
+    Mean = c(mean(BFI_agreeableness, na.rm = TRUE), 
+             mean(BFI_closeones_agreeableness, na.rm = TRUE)),
+    SD = c(sd(BFI_agreeableness, na.rm = TRUE), 
+           sd(BFI_closeones_agreeableness, na.rm = TRUE)),
+    Min = c(min(BFI_agreeableness, na.rm = TRUE), 
+            min(BFI_closeones_agreeableness, na.rm = TRUE)),
+    Max = c(max(BFI_agreeableness, na.rm = TRUE), 
+            max(BFI_closeones_agreeableness, na.rm = TRUE)),
+    Skewness = c(skewness(BFI_agreeableness, na.rm = TRUE), 
+                 skewness(BFI_closeones_agreeableness, na.rm = TRUE)),
+    Kurtosis = c(kurtosis(BFI_agreeableness, na.rm = TRUE), 
+                 kurtosis(BFI_closeones_agreeableness, na.rm = TRUE))
+  )
 
 # Create descriptive statistics by Year (Table 3)
 descriptive_stats_year <- ds %>%
   group_by(Year) %>%
   dplyr::summarize(
-    Score_Type = c("Yc", "Ys"),
-    Mean = c(mean(ds$BFI_agreeableness, na.rm = TRUE), mean(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
-    SD = c(sd(ds$BFI_agreeableness, na.rm = TRUE), sd(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
-    Min = c(min(ds$BFI_agreeableness, na.rm = TRUE), min(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
-    Max = c(max(ds$BFI_agreeableness, na.rm = TRUE), max(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
-    Skewness = c(skewness(ds$BFI_agreeableness, na.rm = TRUE), skewness(ds$BFI_closeones_agreeableness, na.rm = TRUE)),
-    Kurtosis = c(kurtosis(ds$BFI_agreeableness, na.rm = TRUE), kurtosis(ds$BFI_closeones_agreeableness, na.rm = TRUE))
-  ) %>%
-  ungroup()
+    Score_Type = c("Ys", "Yc"),
+    Mean = c(mean(BFI_agreeableness, na.rm = TRUE), 
+             mean(BFI_closeones_agreeableness, na.rm = TRUE)),
+    SD = c(sd(BFI_agreeableness, na.rm = TRUE), 
+           sd(BFI_closeones_agreeableness, na.rm = TRUE)),
+    Min = c(min(BFI_agreeableness, na.rm = TRUE), 
+            min(BFI_closeones_agreeableness, na.rm = TRUE)),
+    Max = c(max(BFI_agreeableness, na.rm = TRUE), 
+            max(BFI_closeones_agreeableness, na.rm = TRUE)),
+    Skewness = c(skewness(BFI_agreeableness, na.rm = TRUE), 
+                 skewness(BFI_closeones_agreeableness, na.rm = TRUE)),
+    Kurtosis = c(kurtosis(BFI_agreeableness, na.rm = TRUE), 
+                 kurtosis(BFI_closeones_agreeableness, na.rm = TRUE))
+  )
 
 # Z-scores by hand
 ds_res <- ds %>%
@@ -250,7 +257,7 @@ ds_res <- ds %>%
     BFI_closeones_agreeableness_percentile = pnorm(BFI_closeones_agreeableness_z) * 100
   )
 
-z_t_percentile_table <- ds_res %>% #??? NOT in report anymore?
+z_t_percentile_table <- ds_res %>%
   dplyr::select(
     BFI_agreeableness_z,
     BFI_agreeableness_t,
@@ -273,13 +280,13 @@ first_respondent_table <- tibble(
 #-------------------------------------------------------------------------------
 #Histograms for Total Scores (Figure 1)
 plot1 <- ggplot(ds, aes(x = BFI_agreeableness)) +
-  geom_histogram(binwidth = 5, fill = "skyblue", color = "black") +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
   labs(title = "Histogram of BFI Agreeableness", x = "BFI Agreeableness Score", y = "Frequency") +
   theme_minimal()
 
 
 plot2 <- ggplot(ds, aes(x = BFI_closeones_agreeableness)) +
-  geom_histogram(binwidth = 5, fill = "lightcoral", color = "black") +
+  geom_histogram(binwidth = 1, fill = "lightcoral", color = "black") +
   labs(title = "Histogram of BFI Closeones Agreeableness", x = "BFI Closeones Agreeableness Score", y = "Frequency") +
   theme_minimal()
 
@@ -674,7 +681,7 @@ ceiling(m * items_original) # new test length
 
 #------------------------------------------------------------------------------
 #Plotting the items (Figure 8)
-
+items_new_seq <- seq(1, 60, by = 1)
 reliability_values <- sapply(items_new_seq, function(items_new) {
   m <- items_new / items_original # ratio of test lengths
   m * rho_original / (1 + (m - 1) * rho_original)
@@ -691,20 +698,24 @@ reliability <- ggplot(data, aes(x = items_new, y = reliability)) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "coral") +
   geom_hline(yintercept = 0.9, linetype = "dashed", color = "purple") +
   geom_hline(yintercept = 0.64, linetype = "dashed", color = "black") +
-  annotate("text", x = 48, y = 1.03, label = "Perfect Correlation", color = "coral", hjust = 1.2, size = 3.5) +
-  annotate("text", x = 48, y = 0.93, label = "Desired Correlation", color = "purple", hjust = 1.2, size = 3.5) +
-  annotate("text", x = 48, y = 0.67, label = "Current Correlation", color = "black", hjust = 1.2, size = 3.5) +
+  annotate("text", x = 48, y = 1.03, label = "Perfect Correlation", color = "coral", hjust = 1.2, size = 5) +
+  annotate("text", x = 48, y = 0.93, label = "Desired Correlation", color = "purple", hjust = 1.2, size = 5) +
+  annotate("text", x = 48, y = 0.67, label = "Current Correlation", color = "black", hjust = 1.2, size = 5) +
   labs(
     x = "Number of Items",
     y = "Reliability (correlation)"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(size = 14),  # Increase x-axis label size
+    axis.title.y = element_text(size = 14)   # Increase y-axis label size
+  )
 
 
 ggsave("reliability.png", plot = reliability, width = 12, height = 6, dpi = 300)
 
 ###############################################################################
-# Split testing (Table í)
+# Split testing (Table 9)
 subdataset7 <- subdataset2[-7,] #Needs even number
 
 #------------------------------------------------------------------------
@@ -732,13 +743,9 @@ reliability <- 2 * cor_x / (1 + cor_x)
 reliability
 
 
-#??? Does not hold with the table
-
 ###############################################################################
 # Cronbach alpha
-psych::alpha(subdataset2,check.keys = TRUE)
-psych::alpha(subdataset2) #Table 10
-
+psych::alpha(subdataset2,check.keys = TRUE) #Table 10
 psych::alpha(subdataset2)$total[1]
 ItemAnalysis(Data = subdataset2[,1:9])$Alpha.drop
 ################################################################################
@@ -862,11 +869,11 @@ neutral_counts_df$Proportion_Neutral <- neutral_counts_df$Neutral_Count / total_
 
 #################################################################################
 # Item discrimination
-
-ItemAnalysis(subdataset[,1:9])$RIT
-ItemAnalysis(subdataset[,1:9])$RIR
-gDiscrim(Data = subdataset[, 1:9]) # ULI
-gDiscrim(Data = subdataset[, 1:9], k = 5, l = 2,u = 5) #ULI*
+#Table 13
+ItemAnalysis(subdataset2[,1:9])$RIT
+ItemAnalysis(subdataset2[,1:9])$RIR
+gDiscrim(Data = subdataset2[, 1:9]) # ULI
+gDiscrim(Data = subdataset2[, 1:9], k = 5, l = 2,u = 5) #ULI*
 
 
 # Plotting distribution of the three groups
@@ -913,7 +920,7 @@ ggsave("ddplotHist.png", plot = ddplotHist, width = 12, height = 6, dpi = 300)
 
 #----------------
 
-DDplot(Data = subdataset[, 1:9], discrim = "ULI") # Figure 12
+DDplot(Data = subdataset2[, 1:9], discrim = "ULI") # Figure 12
 #################################################################################
 #Dichotomization
 
@@ -1004,7 +1011,7 @@ lrtest_vglm(m7)
 lrtest_vglm(m17)
 
 #IRT parametrization
-model <- m7 #m17
+model <- m17 #m7
 c(-coef(model)[1:4] / coef(model)[5], coef(model)[5])
 deltamethod(list(~ -x1 / x5, ~ -x2 / x5, ~ -x3 / x5, ~ -x4 / x5, ~x5),
             mean = coef(model), cov = vcov(model))
@@ -1054,20 +1061,21 @@ A_items_numeric <- as.data.frame(lapply(A_items, function(x) as.numeric(as.chara
 
 fit.grm.mirt <- mirt(A_items_numeric, model = 1, itemtype = 'graded', SE = TRUE) 
 fit.grm.mirt_2F <- mirt(A_items_numeric, model = 2, itemtype = 'graded', SE = TRUE) 
-fit.grm.mirt2 <- mirt(A_items_num_merge, model = 1, itemtype = 'graded', SE = TRUE, dentype = 'EH') #different density
 
-summary(fit.grm.mirt) #Table 17, Table 18
+summary(fit.grm.mirt) #Table 17, 
 summary(fit.grm.mirt_2F)
 anova(fit.grm.mirt,fit.grm.mirt_2F)
 
-coef(fit.grm.mirt, simplify = TRUE)
-coef(fit.grm.mirt, IRTpars = TRUE, simplify = TRUE)
-coef(fit.grm.mirt2, IRTpars = TRUE, simplify = TRUE)
+coef(fit.grm.mirt, simplify = TRUE) 
+coef(fit.grm.mirt, IRTpars = TRUE, simplify = TRUE)#Table 18
 
 response_counts <- apply(A_items, 2, function(x) table(factor(x, levels = 0:4))) # Table 19
 
 #Plotting ----------------------------------------------------------------------
-plot(fit.grm.mirt, type = 'trace') # Figure 16
+plot(fit.grm.mirt, type = 'infotrace') # Figure 16
+plot(fit.grm.mirt, type = 'trace') # Figure 17
+
+
 itemplot(fit.grm.mirt, item = 'Z17', type = "trace")
 itemplot(fit.grm.mirt, item = 'Z17', type = "info")
 itemplot(fit.grm.mirt, item = 'Z17', type = "score")
@@ -1078,12 +1086,12 @@ plot2 <- itemplot(fit.grm.mirt, item = 'Z17', type = "score")
 plot3 <- itemplot(fit.grm.mirt, item = 'Z17', type = "infotrace") 
 plot4 <- itemplot(fit.grm.mirt, item = 'Z17', type = "infoSE")
 
-griditems <- grid.arrange(plot2, plot4, ncol = 2) # Figure 17
+griditems <- grid.arrange(plot2, plot4, ncol = 2) # Figure 18
 ggsave("griditems.png",griditems,  width = 12, height = 6)
 
 plot5 <- plot(fit.grm.mirt, MI = 200)
 plot6 <- plot(fit.grm.mirt, type = "infoSE")
-gridTotal <- grid.arrange(plot5, plot6, ncol = 2) # Figure 19
+gridTotal <- grid.arrange(plot5, plot6, ncol = 2) # Figure 20
 ggsave("gridTotal.png",gridTotal, width = 12, height = 6)
 
 fSE <- fscores(fit.grm.mirt, full.scores.SE = TRUE) 
@@ -1110,19 +1118,21 @@ f1scores <-  ggplot(db, aes(x = reorder(numbers, F1), y = F1)) +
     axis.text.x = element_text(angle = 90, hjust = 1, size = 5) 
   )
 
-ggsave("f1scores.png", plot = f1scores, width = 12, height = 6, dpi = 300) # Figure 18
+ggsave("f1scores.png", plot = f1scores, width = 12, height = 6, dpi = 300) # Figure 19
 
 # B. GRSM (not in the report)-----------------------------------------------------------------------
 A_items_num_merge <- A_items_numeric
 
 # Using apply to modify all columns
 A_items_num_merge <- apply(A_items_num_merge, 2, function(x) ifelse(x == 0, 1, x))
-str(A_items_num_merge)
 
 A_items_num_merge <- as.data.frame(A_items_num_merge)
 A_items_num_merge <- A_items_num_merge - 1
 
 fit.GRSMirt.mirt <- mirt(A_items_num_merge, model = 1, itemtype = "grsmIRT")
+fit.grm.mirt2 <- mirt(A_items_num_merge, model = 1, itemtype = 'graded', SE = TRUE, dentype = 'EH') #different density
+
+coef(fit.grm.mirt2, IRTpars = TRUE, simplify = TRUE)
 coef(fit.GRSMirt.mirt, simplify = TRUE)
 anova(fit.GRSMirt.mirt, fit.grm.mirt2)
 
@@ -1134,8 +1144,20 @@ itemplot(fit.GRSMirt.mirt, item = 'Z17', type = "infoSE")
 
 
 plot(fit.GRSMirt.mirt, type = 'trace')
-plot(fit.GRSMirt.mirt, MI = 200)
 plot(fit.GRSMirt.mirt, type = "infoSE")
+
+# Relationship Between IRT Ability Estimates and Standardized Scores (Figure 21)
+fSE_values <- fSE[, 1]
+data <- data.frame(IRT_ability = fSE_values, Standardized_Score = zscore)
+realIRTZ <- ggplot(data, aes(x = IRT_ability, y = Standardized_Score)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Line of best fit
+  labs(x = "IRT Ability Estimates (θ^)",
+       y = "Standardized Total Scores (Z)") +
+  theme_minimal()
+ggsave("realIRTZ.png", plot = realIRTZ, width = 12, height = 6, dpi = 300)
+
+
 
 #C. Dichom rasch (not in the report)----------------------------------------------------------------
 fit_rasch_mirt <- mirt(data = subdataset_dichotomized[,-10], model = 1, itemtype = "Rasch", 
@@ -1180,7 +1202,7 @@ counts_ones <- subdataset_dichotomizedDIF %>%
 table(subdataset_dichotomizedDIF$Western)
 
 # Contigency table (Table 20)
-total_score_value <- 1
+total_score_value <- 3
 subdataset_dichotomizedDIF$total_score <- rowSums(subdataset_dichotomizedDIF[,1:9])
 subset_data <- subdataset_dichotomizedDIF[subdataset_dichotomizedDIF$total_score == total_score_value, ]
 items <- c('Z7')
@@ -1201,9 +1223,10 @@ for (item in items) {
   
   contingency_tables[[item]] <- contingency_table
 }
+contingency_tables
 ################################################################################
 #MH test
-difModel <- difMH(Data = subdataset_dichotomizedDIF, group = "Western", focal.name = 1,match = "score",
+difModel <- difMH(Data = subdataset_dichotomizedDIF[,1:10], group = "Western", focal.name = 1,match = "score",
                   p.adjust.method = "none", purify = FALSE)
 
 difModel #Table 21
@@ -1250,12 +1273,14 @@ create_contingency_tables <- function(data, items, group_column, score_column) {
   return(contingency_tables)
 }
 
-contingency_tables <- create_contingency_tables(
+
+contingency_tables3 <- create_contingency_tables(
   data = subdataset_dichotomizedDIF,
-  items = c("Z32"),
+  item = "Z32",
   group_column = "Western",
   score_column = "total_score"
 ) # Table 22
+
 
 plot.MH(difModel, names = names_list) #Not in the report
 
@@ -1265,21 +1290,22 @@ difSIBTEST(Data = subdataset_dichotomizedDIF[1:10], group = "Western", focal.nam
 difSIBTEST(Data = subdataset_dichotomizedDIF[1:10], group = "Western", focal.name = 1, type = "nudif") #Non-Uni DIF
 # Table 23
 
+
 ###########################################################################
 # Cumulative regression
 fit_ORD1 <- difORD(Data = A_items_numeric, group = subdataset_dichotomizedDIF$Western, focal.name = 1, model = "cumulative")
-summary(fit_ORD1) # Table 24
+fit_ORD1 # Table 24
 coef(fit_ORD1, SE = TRUE, CI =0)$Z17 #Table 25
 coef(fit_ORD1, SE = TRUE, CI =0)$Z32 #Table 25
 
 
 
-#Figure 20
+#Figure 22
 plot(fit_ORD1, item = "Z17", plot.type = "cumulative",
      group.names = c("Eastern", "Western"))
 plot(fit_ORD1, item = "Z32", plot.type = "cumulative",
      group.names = c("Eastern", "Western"))
-#Figure 21
+#Figure 23
 plot(fit_ORD1, item = "Z17", plot.type = "category",
      group.names = c("Eastern", "Western"))
 plot(fit_ORD1, item = "Z32", plot.type = "category",
@@ -1295,3 +1321,4 @@ predict(fit_ORD1, item = "Z17", match = 0, group = c(0, 1), type = "cumulative")
 lordiffModel <- lordif(resp.data = A_items_numeric, group = subdataset_dichotomizedDIF$Western, alpha = 0.05)
 summary(lordiffModel)
 lordiffModel$ipar.sparse
+

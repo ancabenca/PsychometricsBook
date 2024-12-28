@@ -182,4 +182,5 @@ reliability <- ggplot(data, aes(x = items_new, y = reliability)) +
 
 
 ggsave("reliability.png", plot = reliability, width = 12, height = 6, dpi = 300)
+ShinyItemAnalysis::run_app()
 
