@@ -1322,3 +1322,52 @@ lordiffModel <- lordif(resp.data = A_items_numeric, group = subdataset_dichotomi
 summary(lordiffModel)
 lordiffModel$ipar.sparse
 
+
+G <- ds$BFI_agreeableness - ds$BFI_closeones_agreeableness
+#Questions
+data <- data.frame(G = G)
+
+# Plot with ggplot
+histQ <- ggplot(data, aes(x = G)) +
+  # Histogram
+  geom_histogram(aes(y = ..density..), bins = 20, fill = "skyblue", color = "black", alpha = 0.7) +
+  # Smoothed density curve
+  geom_density(color = "darkgreen", size = 1.2) +
+  # Normal bell curve
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(G), sd = sd(G)), 
+                color = "red", size = 1, linetype = "dashed") +
+  # Labels and title
+  labs(title = "Histogram of Differences with Density Curves", 
+       x = "Differences (G = Y_s - Y_c)", 
+       y = "Density") +
+  # Theme for better visualization
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14),
+        axis.title = element_text(size = 12))
+# QQ Plot of the Differences
+
+
+data <- data.frame(
+  SampleQuantiles = sort(G),
+  TheoreticalQuantiles = qnorm((1:length(G) - 0.5) / length(G)) # Theoretical quantiles
+)
+
+# QQ Plot with ggplot2
+QQQ<- ggplot(data, aes(x = TheoreticalQuantiles, y = SampleQuantiles)) +
+  # Points for the QQ plot
+  geom_point(color = "black", size = 2) +
+  # QQ line
+  geom_abline(slope = sd(G), intercept = mean(G), color = "red", size = 1.2, linetype = "dashed") +
+  # Labels and title
+  labs(title = "QQ Plot of Differences",
+       x = "Theoretical Quantiles (Normal Distribution)",
+       y = "Sample Quantiles") +
+  # Theme for better visualization
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14),
+        axis.title = element_text(size = 12))
+
+
+question2 <- grid.arrange(histQ, QQQ, ncol = 2) # Figure 11
+ggsave("question2.png", plot = question2, width = 12, height = 6, dpi = 300)
